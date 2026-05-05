@@ -1,0 +1,9 @@
+# Archivos excluidos del bundle de assets (no se sirven al público)
+_worker.js
+wrangler.toml
+.assetsignore
+supabase/
+*.sql
+*.md
+.git/
+node_modules/

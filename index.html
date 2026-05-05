@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="theme-color" content="#f9f9f9">
+<meta name="description" content="Reserva tu hora en Belleza Integral. Coloración, maquillaje, depilación y más.">
+<title>Belleza Integral — Reservas Online</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&family=Manrope:wght@300;400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- LOADER -->
+<div class="loader" id="loader">
+  <div class="loader-spin"></div>
+  <p class="loader-txt" id="loader-txt">Cargando…</p>
+</div>
+
+<!-- TOAST -->
+<div class="toast-error" id="toast-error"></div>
+
+<!-- TOP APP BAR -->
+<header class="navbar">
+  <button class="nav-icon-btn" onclick="document.getElementById('servicios').scrollIntoView({behavior:'smooth'})">
+    <span class="material-symbols-outlined">spa</span>
+  </button>
+  <div class="nav-brand" id="nav-brand">
+    <span class="nav-nombre">Belleza Integral</span>
+  </div>
+  <!-- Admin: acceso oculto → /admin/login.html -->
+  <div style="width:40px"></div>
+</header>
+
+<!-- PANTALLA PRINCIPAL -->
+<div id="reservas-screen">
+
+  <!-- HERO -->
+  <section class="hero" id="inicio">
+    <div class="hero-visual">
+      <div class="hero-gradient-bg"></div>
+      <div class="hero-badge">
+        <span class="material-symbols-outlined" style="font-size:13px;vertical-align:-2px">auto_awesome</span>
+        Reservas en tiempo real · Sin esperar
+      </div>
+    </div>
+    <div class="hero-copy">
+      <p class="hero-overline">Nuestra Filosofía</p>
+      <h1 class="hero-title">L'Art de<br><em>la Belleza</em></h1>
+      <p class="hero-sub">Descubre un espacio donde el tiempo se detiene y tu transformación comienza con atención personalizada.</p>
+      <div class="hero-ctas">
+        <button class="btn-primary" onclick="document.getElementById('reservar').scrollIntoView({behavior:'smooth'})">
+          Reservar Ahora
+          <span class="material-symbols-outlined" style="font-size:15px;vertical-align:-2px">arrow_forward</span>
+        </button>
+        <button class="btn-ghost" onclick="document.getElementById('servicios').scrollIntoView({behavior:'smooth'})">
+          Ver Servicios
+        </button>
+      </div>
+    </div>
+    <div class="hero-stat-card">
+      <p class="hero-stat-label">Our Philosophy</p>
+      <p class="hero-stat-quote">Elevando tu esencia natural.</p>
+    </div>
+  </section>
+
+  <!-- SERVICIOS HEADER -->
+  <section id="servicios" class="section-header">
+    <p class="section-overline">Catálogo</p>
+    <h2 class="section-title">Soins <em>Capillaires</em></h2>
+    <p class="section-sub">Selecciona el servicio que deseas para ver disponibilidad.</p>
+  </section>
+
+  <!-- LAYOUT RESERVAS -->
+  <section id="reservar" class="reservas-layout">
+
+    <div class="reservas-main">
+
+      <!-- PASO 1 -->
+      <div class="paso" id="paso-servicio">
+        <div class="paso-titulo" data-paso="1">Elige tu servicio</div>
+        <div id="servicios-grid">
+          <div style="padding:32px;text-align:center;color:var(--muted)">Cargando servicios…</div>
+        </div>
+      </div>
+
+      <!-- PASO 2 -->
+      <div class="paso" id="paso-fecha">
+        <div class="paso-titulo" data-paso="2">Selecciona la fecha</div>
+        <div class="cal-card">
+          <div id="calendario"></div>
+          <div id="fecha-display" class="fecha-display-txt"></div>
+        </div>
+      </div>
+
+      <!-- PASO 3 -->
+      <div class="paso" id="paso-hora">
+        <div class="paso-titulo" data-paso="3">Elige especialista y hora</div>
+        <div id="empleados-filtro" style="margin-bottom:16px"></div>
+        <div id="slots-container">
+          <p class="slots-vacio">Selecciona un servicio y fecha para ver disponibilidad.</p>
+        </div>
+      </div>
+
+      <!-- BANNER EDITORIAL -->
+      <div class="editorial-banner">
+        <span class="material-symbols-outlined editorial-banner-icon">auto_awesome</span>
+        <h3 class="editorial-banner-title">Cuídate hoy</h3>
+        <p class="editorial-banner-sub">La ciencia y el arte unidos en cada tratamiento.</p>
+        <button class="btn-primary" onclick="document.getElementById('reservar').scrollIntoView({behavior:'smooth'})">
+          Reservar Ahora
+        </button>
+      </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="reservas-sidebar">
+      <div class="sidebar-card">
+        <div class="sidebar-titulo">Tu selección</div>
+        <div id="resumen-seleccion">
+          <p class="resumen-placeholder">Selecciona un servicio y fecha para continuar.</p>
+        </div>
+      </div>
+      <div class="sidebar-card" id="contacto">
+        <div class="sidebar-titulo">Información</div>
+        <div class="contact-list">
+          <div class="contact-item">
+            <span class="material-symbols-outlined contact-icon">location_on</span>
+            <span>Santiago Centro, Santiago de Chile</span>
+          </div>
+          <div class="contact-item">
+            <span class="material-symbols-outlined contact-icon">call</span>
+            <span>+56 964 364 128</span>
+          </div>
+          <div class="contact-item">
+            <span class="material-symbols-outlined contact-icon">schedule</span>
+            <span>Lun–Sáb: 9:00 – 20:00</span>
+          </div>
+          <div class="contact-item">
+            <span class="material-symbols-outlined contact-icon">mail</span>
+            <span>voycontigo.licencia@gmail.com</span>
+          </div>
+          <div class="contact-social">
+            <a href="https://wa.me/56964364128" target="_blank" class="social-btn social-btn--wa">
+              <span class="material-symbols-outlined" style="font-size:14px">chat</span>WhatsApp
+            </a>
+            <a href="https://www.instagram.com/bellezaintegral.liz?igsh=MWNua2d1d2R3aW83bA==" target="_blank" class="social-btn social-btn--ig">
+              <span class="material-symbols-outlined" style="font-size:14px">photo_camera</span>Instagram
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+</div>
+
+<!-- CONFIRMACIÓN -->
+<div id="confirmacion-screen" style="display:none">
+  <div class="conf-screen">
+    <div class="conf-icon">🎉</div>
+    <h2>¡Reserva Confirmada!</h2>
+    <p class="conf-sub">Tu número de reserva es:</p>
+    <div class="conf-id" id="conf-id">—</div>
+    <p class="conf-note">Recibirás un email de confirmación. También se agregó a Google Calendar.</p>
+    <div class="conf-detalles">
+      <div class="conf-item"><span>Cliente</span><strong id="conf-nombre">—</strong></div>
+      <div class="conf-item"><span>Servicio</span><strong id="conf-srv">—</strong></div>
+      <div class="conf-item"><span>Especialista</span><strong id="conf-barbero">—</strong></div>
+      <div class="conf-item"><span>Fecha</span><strong id="conf-fecha">—</strong></div>
+      <div class="conf-item"><span>Hora</span><strong id="conf-hora">—</strong></div>
+    </div>
+    <button class="btn-primary" style="margin-top:24px" onclick="nuevaReserva()">
+      Hacer otra reserva
+    </button>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo-wrap" id="footer-logo-wrap">
+    <span class="footer-logo-emoji">✨</span>
+  </div>
+  <div class="footer-nombre">Belleza Integral</div>
+  <div class="footer-info">
+    Santiago Centro, Santiago de Chile · +56 964 364 128<br>
+    Lun–Sáb 9:00–20:00 · voycontigo.licencia@gmail.com
+  </div>
+  <div class="footer-social-row">
+    <a href="https://wa.me/56964364128" target="_blank" class="footer-link">WhatsApp</a>
+    <span>·</span>
+    <a href="https://www.instagram.com/bellezaintegral.liz?igsh=MWNua2d1d2R3aW83bA==" target="_blank" class="footer-link">Instagram</a>
+  </div>
+</footer>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="bnav-item" onclick="document.getElementById('servicios').scrollIntoView({behavior:'smooth'})">
+    <span class="material-symbols-outlined bnav-icon">spa</span>
+    <span class="bnav-label">Servicios</span>
+  </button>
+  <button class="bnav-item bnav-item--active" onclick="document.getElementById('reservar').scrollIntoView({behavior:'smooth'})">
+    <span class="material-symbols-outlined bnav-icon">content_cut</span>
+    <span class="bnav-label">Reservar</span>
+  </button>
+  <a class="bnav-item" href="#contacto">
+    <span class="material-symbols-outlined bnav-icon">location_on</span>
+    <span class="bnav-label">Contacto</span>
+  </a>
+</nav>
+
+<!-- MODAL -->
+<div class="modal-back" id="modal-reserva">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Confirmar Reserva</h3>
+      <button class="modal-close" onclick="cerrarModal()">
+        <span class="material-symbols-outlined" style="font-size:18px">close</span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-resumen">
+        <div class="modal-res-item"><span>Servicio</span><strong id="modal-srv">—</strong></div>
+        <div class="modal-res-item"><span>Especialista</span><strong id="modal-barbero">—</strong></div>
+        <div class="modal-res-item"><span>Fecha</span><strong id="modal-fecha">—</strong></div>
+        <div class="modal-res-item"><span>Hora</span><strong id="modal-hora">—</strong></div>
+        <div class="modal-res-item"><span>Precio</span><strong id="modal-precio" style="color:var(--primary)">—</strong></div>
+      </div>
+      <div id="sesion-group" style="display:none" class="form-group">
+        <label class="form-label">N° de Sesión</label>
+        <select class="form-input form-select" id="sesion-num"></select>
+      </div>
+      <div class="form-2col">
+        <div class="form-group">
+          <label class="form-label">Nombre *</label>
+          <input class="form-input" id="inp-nombre" type="text" placeholder="María González" autocomplete="name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Teléfono</label>
+          <input class="form-input" id="inp-tel" type="tel" placeholder="+56 9 1234 5678" autocomplete="tel">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email *</label>
+        <input class="form-input" id="inp-email" type="email" placeholder="tu@email.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notas (opcional)</label>
+        <textarea class="form-input form-textarea" id="inp-notas" placeholder="Referencias, consultas, etc."></textarea>
+      </div>
+      <button class="btn-confirmar" onclick="confirmarReserva()">
+        Confirmar Reserva
+        <span class="material-symbols-outlined" style="font-size:15px;vertical-align:-2px">check_circle</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/calendar.js"></script>
+<script src="js/app.js"></script>
+<script>
+window.addEventListener('load', function() {
+  if (typeof LOGO_URL !== 'undefined' && LOGO_URL) {
+    var brand = document.getElementById('nav-brand');
+    if (brand) brand.innerHTML = '<img src="' + LOGO_URL + '" alt="Belleza Integral" class="nav-logo-img">';
+    var fw = document.getElementById('footer-logo-wrap');
+    if (fw) fw.innerHTML = '<img src="' + LOGO_URL + '" alt="Belleza Integral" class="footer-logo-img">';
+  }
+});
+</script>
+</body>
+</html>

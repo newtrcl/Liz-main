@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Admin — Belleza Integral</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/styles.css">
+<style>
+  body{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;padding-bottom:20px}
+  .login-wrap{width:100%;max-width:400px}
+  .login-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);
+    padding:40px 32px;box-shadow:var(--shadow-lg);text-align:center}
+  .login-logo{font-size:40px;margin-bottom:16px}
+  .login-titulo{font-size:22px;font-weight:800;margin-bottom:6px;color:var(--text)}
+  .login-sub{font-size:13px;color:var(--muted);margin-bottom:28px}
+  .form-group{text-align:left;margin-bottom:16px}
+  .form-label{display:block;font-size:12px;font-weight:600;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+  .btn-login{
+    width:100%;margin-top:8px;padding:14px;border-radius:var(--r);
+    background:var(--primary);color:#fff;font-size:15px;font-weight:700;
+    border:none;cursor:pointer;transition:background .2s,transform .15s;
+  }
+  .btn-login:hover{background:#5a4800;transform:translateY(-1px)}
+  .btn-login:disabled{opacity:.6;cursor:not-allowed;transform:none}
+  #login-error{color:var(--danger);font-size:13px;margin-top:12px;display:none}
+  .back-link{display:block;text-align:center;margin-top:20px;font-size:13px;color:var(--muted)}
+  .back-link a{color:var(--primary);font-weight:600}
+</style>
+</head>
+<body>
+
+<div class="loader" id="loader" style="display:none">
+  <div class="loader-spin"></div>
+  <p class="loader-txt" id="loader-txt">Verificando…</p>
+</div>
+<div class="toast-error" id="toast-error"></div>
+
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="login-logo">✨</div>
+    <h2 class="login-titulo">Panel Administrador</h2>
+    <p class="login-sub">Acceso exclusivo para el equipo de Belleza Integral</p>
+    <div class="form-group">
+      <label class="form-label">Contraseña de acceso</label>
+      <input class="form-input" id="login-pwd" type="password"
+        placeholder="Contraseña"
+        onkeydown="if(event.key==='Enter')iniciarSesion()"
+        autocomplete="current-password">
+    </div>
+    <button class="btn-login" id="btn-login" onclick="iniciarSesion()">
+      Ingresar →
+    </button>
+    <p id="login-error">❌ Credenciales incorrectas</p>
+  </div>
+  <p class="back-link"><a href="/">← Volver al inicio</a></p>
+</div>
+
+<script src="../js/api.js"></script>
+<script>
+// Si ya tiene sesión válida, redirigir directo al panel
+(async () => {
+  try {
+    const r = await fetch('/api/admin/dashboard', { credentials: 'same-origin' });
+    if (r.ok) window.location.href = '/admin/panel.html';
+  } catch {}
+})();
+
+async function iniciarSesion() {
+  const pwd = document.getElementById('login-pwd').value.trim();
+  if (!pwd) return;
+
+  const btn = document.getElementById('btn-login');
+  btn.disabled = true;
+  document.getElementById('login-error').style.display = 'none';
+
+  const loader = document.getElementById('loader');
+  loader.style.display = 'flex';
+
+  try {
+    const res = await API.adminLogin(pwd);
+    loader.style.display = 'none';
+
+    if (res.ok) {
+      window.location.href = '/admin/panel.html';
+    } else {
+      document.getElementById('login-error').textContent =
+        '❌ ' + (res.error || 'Credenciales incorrectas');
+      document.getElementById('login-error').style.display = 'block';
+      btn.disabled = false;
+    }
+  } catch (e) {
+    loader.style.display = 'none';
+    const toast = document.getElementById('toast-error');
+    toast.textContent = '❌ Error de conexión';
+    toast.classList.add('visible');
+    setTimeout(() => toast.classList.remove('visible'), 4000);
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
