@@ -1,0 +1,3 @@
+git add .
+git commit -m "Add GitHub Actions for deploy"
+git push origin main
