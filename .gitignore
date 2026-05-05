@@ -1,0 +1,27 @@
+# ── Secretos — NUNCA en git ──────────────────────────────────
+.env
+.env.*
+*.env
+wrangler.toml.local
+secrets.json
+.dev.vars
+
+# ── Cloudflare Wrangler ───────────────────────────────────────
+.wrangler/
+.cache/
+
+# ── Node ──────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-error.log
+
+# ── OS / Editor ───────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+.idea/
+
+# ── Build / temp ─────────────────────────────────────────────
+dist/
+*.zip
+*.bak

@@ -1,102 +1,55 @@
 /* ================================================================
-   BARBERÍA PRO — 4_calendar.gs
-   Integración con Google Calendar
+   BELLEZA INTEGRAL — calendar.gs
+   Crea y elimina eventos en Google Calendar.
    ================================================================ */
 
-/**
- * Crea un evento en Google Calendar para la reserva.
- * @returns {string} ID del evento creado
- */
-function crearEventoCalendar(reserva, servicio) {
+function crearEventoCalendar(p) {
   try {
-    var calendar = CalendarApp.getCalendarById(CALENDAR_ID)
-                || CalendarApp.getDefaultCalendar();
+    var cal = CalendarApp.getCalendarById(CALENDAR_ID)
+           || CalendarApp.getDefaultCalendar();
 
-    var fechaObj   = new Date(reserva.fecha + "T00:00:00");
-    var partsI     = reserva.horaInicio.split(":");
-    var partsF     = reserva.horaFin.split(":");
+    var parts = String(p.fecha||"").split("-");
+    var base  = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
 
-    var inicio = new Date(fechaObj);
-    inicio.setHours(parseInt(partsI[0]), parseInt(partsI[1]), 0, 0);
+    var pI = String(p.horaInicio||"09:00").split(":");
+    var pF = String(p.horaFin   ||"10:00").split(":");
 
-    var fin = new Date(fechaObj);
-    fin.setHours(parseInt(partsF[0]), parseInt(partsF[1]), 0, 0);
+    var inicio = new Date(base); inicio.setHours(parseInt(pI[0]), parseInt(pI[1]), 0, 0);
+    var fin    = new Date(base); fin.setHours(parseInt(pF[0]),   parseInt(pF[1]), 0, 0);
 
-    var sesionInfo = servicio.esSesion
-      ? " (Sesión " + reserva.sesionNum + "/" + reserva.sesionesTotales + ")"
-      : "";
+    var titulo = "✨ " + (p.servicioNombre||"") + " — " + (p.nombre||"");
+    var desc   =
+      "📋 Reserva: " + (p.reservaID||"") + "\n" +
+      "👤 Cliente: " + (p.nombre||"") + "\n" +
+      "📧 Email: "   + (p.email||"") + "\n" +
+      "📞 Tel: "     + (p.telefono||"N/A") + "\n" +
+      "✨ Servicio: " + (p.servicioNombre||"") + "\n" +
+      "💆 Especialista: " + (p.empleadoNombre||"") + "\n" +
+      "💰 Precio: $" + parseFloat(p.precio||0).toLocaleString("es-CL") + "\n" +
+      (p.notas ? "📝 Notas: " + p.notas : "");
 
-    var titulo = "✨ " + reserva.servicioNombre + sesionInfo +
-                 " — " + reserva.nombre;
-
-    var descripcion =
-      "📋 Reserva: " + reserva.id + "\n" +
-      "👤 Cliente: " + reserva.nombre + "\n" +
-      "📧 Email: "   + reserva.email  + "\n" +
-      "📞 Tel: "     + (reserva.telefono||"N/A") + "\n" +
-      "✨ Servicio: " + reserva.servicioNombre + sesionInfo + "\n" +
-      "💆 Especialista: "  + reserva.empleadoNombre + "\n" +
-      "💰 Precio: $"  + (reserva.precio||0).toLocaleString("es-CL") + "\n" +
-      (reserva.notas ? "📝 Notas: " + reserva.notas : "");
-
-    var evento = calendar.createEvent(titulo, inicio, fin, {
-      description: descripcion,
+    var evento = cal.createEvent(titulo, inicio, fin, {
+      description: desc,
       location:    NEGOCIO_DIR,
-      guests:      reserva.email,
-      sendInvites: true
+      guests:      p.email,
+      sendInvites: true,
     });
 
-    log("INFO","crearEventoCalendar",reserva.id,reserva.nombre,
-        { eventoID: evento.getId() },"");
-
+    log("INFO","crearEventoCalendar",p.reservaID||"",p.nombre||"",{ eventoID: evento.getId() },"");
     return evento.getId();
   } catch(e) {
-    log("ERROR","crearEventoCalendar",reserva.id,reserva.nombre,{},"Calendar: "+e.message);
+    log("ERROR","crearEventoCalendar",p.reservaID||"",p.nombre||"",{},e.message);
     return "";
   }
 }
 
-/**
- * Elimina el evento de Calendar al cancelar la reserva.
- */
 function eliminarEventoCalendar(eventID) {
   if (!eventID) return;
   try {
-    var calendar = CalendarApp.getCalendarById(CALENDAR_ID)
-                || CalendarApp.getDefaultCalendar();
-    var evento = calendar.getEventById(eventID);
-    if (evento) {
-      evento.deleteEvent();
-      log("INFO","eliminarEventoCalendar","","",{ eventID },"");
-    }
+    var cal    = CalendarApp.getCalendarById(CALENDAR_ID) || CalendarApp.getDefaultCalendar();
+    var evento = cal.getEventById(eventID);
+    if (evento) evento.deleteEvent();
   } catch(e) {
-    log("ERROR","eliminarEventoCalendar","","",{ eventID },"Calendar: "+e.message);
-  }
-}
-
-/**
- * Obtiene los eventos del calendario para un día específico.
- * Útil para el dashboard admin.
- */
-function getEventosCalendarPorFecha(fecha) {
-  try {
-    var calendar  = CalendarApp.getCalendarById(CALENDAR_ID)
-                 || CalendarApp.getDefaultCalendar();
-    var fechaObj  = new Date(fecha + "T00:00:00");
-    var finDia    = new Date(fecha + "T23:59:59");
-    var eventos   = calendar.getEvents(fechaObj, finDia);
-
-    return eventos.map(function(ev) {
-      return {
-        id:       ev.getId(),
-        titulo:   ev.getTitle(),
-        inicio:   Utilities.formatDate(ev.getStartTime(), TZ, "HH:mm"),
-        fin:      Utilities.formatDate(ev.getEndTime(),   TZ, "HH:mm"),
-        descripcion: ev.getDescription()
-      };
-    });
-  } catch(e) {
-    log("ERROR","getEventosCalendarPorFecha","","",{ fecha },"Calendar: "+e.message);
-    return [];
+    log("ERROR","eliminarEventoCalendar","","",{ eventID: eventID },e.message);
   }
 }

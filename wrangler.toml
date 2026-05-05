@@ -1,26 +1,24 @@
 # ================================================================
-# Liz Belleza Integral — Cloudflare Workers + Assets
-# Deploy: wrangler deploy
-# Secrets: wrangler secret put SUPABASE_SERVICE_KEY
-#          wrangler secret put ADMIN_PASSWORD
-#          wrangler secret put ADMIN_SECRET
-#          wrangler secret put GAS_URL
+# Belleza Integral — Cloudflare Workers + Assets
+# Deploy : wrangler deploy
+# Secrets: ver DEPLOY.md sección 2b
 # ================================================================
 
-name            = "liz-belleza"
-main            = "_worker.js"
+name               = "liz-belleza"
+main               = "_worker.js"
 compatibility_date = "2025-01-01"
 
 [assets]
 directory = "."
 binding   = "ASSETS"
 
-# KV namespace para rate-limiting (crea con: wrangler kv namespace create RATE_KV)
-# Descomenta y reemplaza el ID después de crearlo:
+# ── Variables públicas (no secretas) ─────────────────────────
+[vars]
+SUPABASE_URL = "https://dkryjxgjqmikrhusxsau.supabase.co"
+
+# ── KV para rate-limiting (opcional) ─────────────────────────
+# 1. Crea el namespace: wrangler kv namespace create RATE_KV
+# 2. Descomenta y reemplaza el ID:
 # [[kv_namespaces]]
 # binding = "RATE_KV"
 # id      = "REEMPLAZA_CON_TU_KV_ID"
-
-# Variables públicas (no secretas)
-[vars]
-SUPABASE_URL = "https://dkryjxgjqmikrhusxsau.supabase.co"

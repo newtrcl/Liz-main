@@ -3,15 +3,108 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<meta name="theme-color" content="#f9f9f9">
-<meta name="description" content="Reserva tu hora en Belleza Integral. Coloración, maquillaje, depilación y más.">
+<meta name="theme-color" content="#4a3800">
+<meta name="description" content="Reserva tu hora en Belleza Integral — Coloración, maquillaje, depilación y más. Santiago Centro.">
+<meta name="robots" content="index,follow">
+
+<!-- Open Graph / Facebook / WhatsApp -->
+<meta property="og:type"        content="website">
+<meta property="og:url"         content="https://liz-belleza.pages.dev/">
+<meta property="og:title"       content="Belleza Integral — Reservas Online">
+<meta property="og:description" content="Reserva tu hora de coloración, maquillaje, depilación y más. Atención personalizada en Santiago Centro.">
+<meta property="og:image"       content="https://liz-belleza.pages.dev/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale"     content="es_CL">
+<meta property="og:site_name"  content="Belleza Integral">
+
+<!-- Twitter Card -->
+<meta name="twitter:card"        content="summary_large_image">
+<meta name="twitter:title"       content="Belleza Integral — Reservas Online">
+<meta name="twitter:description" content="Reserva tu hora en Santiago Centro. Coloración, maquillaje, depilación y más.">
+<meta name="twitter:image"       content="https://liz-belleza.pages.dev/og-image.jpg">
+
 <title>Belleza Integral — Reservas Online</title>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&family=Manrope:wght@300;400;600;800&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
+
+<style>
+/* ── Hero con imagen de fondo ────────────────────────────────── */
+.hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 520px;
+}
+.hero-bg-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+  opacity: .22;
+  pointer-events: none;
+  z-index: 0;
+}
+.hero > * { position: relative; z-index: 1; }
+
+/* ── Monitor de conexión ─────────────────────────────────────── */
+#monitor-dot {
+  position: fixed;
+  bottom: 72px;
+  right: 14px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34,197,94,.25);
+  z-index: 999;
+  transition: background .4s, box-shadow .4s;
+}
+#monitor-dot.offline {
+  background: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239,68,68,.25);
+}
+#monitor-dot.checking {
+  background: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245,158,11,.25);
+}
+
+/* ── Sonido toggle ───────────────────────────────────────────── */
+#sound-btn {
+  position: fixed;
+  bottom: 92px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.9);
+  border: 1px solid rgba(115,92,0,.2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  z-index: 998;
+  box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  transition: opacity .2s;
+}
+#sound-btn:hover { opacity: .8; }
+</style>
 </head>
 <body>
+
+<!-- Monitor dot -->
+<div id="monitor-dot" title="Conexión activa"></div>
+<!-- Sonido toggle -->
+<button id="sound-btn" onclick="toggleSonido()" title="Activar/desactivar sonidos">🔔</button>
+
+<!-- AUDIO — sonidos sutiles -->
+<audio id="snd-select" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=" preload="none"></audio>
+<audio id="snd-confirm" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=" preload="none"></audio>
 
 <!-- LOADER -->
 <div class="loader" id="loader">
@@ -30,7 +123,6 @@
   <div class="nav-brand" id="nav-brand">
     <span class="nav-nombre">Belleza Integral</span>
   </div>
-  <!-- Admin: acceso oculto → /admin/login.html -->
   <div style="width:40px"></div>
 </header>
 
@@ -39,6 +131,14 @@
 
   <!-- HERO -->
   <section class="hero" id="inicio">
+    <!-- Imagen de fondo del hero -->
+    <img
+      class="hero-bg-img"
+      src="https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1400&q=80"
+      alt=""
+      loading="eager"
+      fetchpriority="high"
+    >
     <div class="hero-visual">
       <div class="hero-gradient-bg"></div>
       <div class="hero-badge">
@@ -51,7 +151,7 @@
       <h1 class="hero-title">L'Art de<br><em>la Belleza</em></h1>
       <p class="hero-sub">Descubre un espacio donde el tiempo se detiene y tu transformación comienza con atención personalizada.</p>
       <div class="hero-ctas">
-        <button class="btn-primary" onclick="document.getElementById('reservar').scrollIntoView({behavior:'smooth'})">
+        <button class="btn-primary" onclick="scrollReservar()">
           Reservar Ahora
           <span class="material-symbols-outlined" style="font-size:15px;vertical-align:-2px">arrow_forward</span>
         </button>
@@ -104,14 +204,12 @@
         </div>
       </div>
 
-      <!-- BANNER EDITORIAL -->
+      <!-- BANNER -->
       <div class="editorial-banner">
         <span class="material-symbols-outlined editorial-banner-icon">auto_awesome</span>
         <h3 class="editorial-banner-title">Cuídate hoy</h3>
         <p class="editorial-banner-sub">La ciencia y el arte unidos en cada tratamiento.</p>
-        <button class="btn-primary" onclick="document.getElementById('reservar').scrollIntoView({behavior:'smooth'})">
-          Reservar Ahora
-        </button>
+        <button class="btn-primary" onclick="scrollReservar()">Reservar Ahora</button>
       </div>
     </div>
 
@@ -140,13 +238,13 @@
           </div>
           <div class="contact-item">
             <span class="material-symbols-outlined contact-icon">mail</span>
-            <span>voycontigo.licencia@gmail.com</span>
+            <span>newtraderchiles@gmail.com</span>
           </div>
           <div class="contact-social">
-            <a href="https://wa.me/56964364128" target="_blank" class="social-btn social-btn--wa">
+            <a href="https://wa.me/56964364128" target="_blank" rel="noopener" class="social-btn social-btn--wa">
               <span class="material-symbols-outlined" style="font-size:14px">chat</span>WhatsApp
             </a>
-            <a href="https://www.instagram.com/bellezaintegral.liz?igsh=MWNua2d1d2R3aW83bA==" target="_blank" class="social-btn social-btn--ig">
+            <a href="https://www.instagram.com/bellezaintegral.liz?igsh=MWNua2d1d2R3aW83bA==" target="_blank" rel="noopener" class="social-btn social-btn--ig">
               <span class="material-symbols-outlined" style="font-size:14px">photo_camera</span>Instagram
             </a>
           </div>
@@ -186,12 +284,12 @@
   <div class="footer-nombre">Belleza Integral</div>
   <div class="footer-info">
     Santiago Centro, Santiago de Chile · +56 964 364 128<br>
-    Lun–Sáb 9:00–20:00 · voycontigo.licencia@gmail.com
+    Lun–Sáb 9:00–20:00 · newtraderchiles@gmail.com
   </div>
   <div class="footer-social-row">
-    <a href="https://wa.me/56964364128" target="_blank" class="footer-link">WhatsApp</a>
+    <a href="https://wa.me/56964364128" target="_blank" rel="noopener" class="footer-link">WhatsApp</a>
     <span>·</span>
-    <a href="https://www.instagram.com/bellezaintegral.liz?igsh=MWNua2d1d2R3aW83bA==" target="_blank" class="footer-link">Instagram</a>
+    <a href="https://www.instagram.com/bellezaintegral.liz?igsh=MWNua2d1d2R3aW83bA==" target="_blank" rel="noopener" class="footer-link">Instagram</a>
   </div>
 </footer>
 
@@ -201,7 +299,7 @@
     <span class="material-symbols-outlined bnav-icon">spa</span>
     <span class="bnav-label">Servicios</span>
   </button>
-  <button class="bnav-item bnav-item--active" onclick="document.getElementById('reservar').scrollIntoView({behavior:'smooth'})">
+  <button class="bnav-item bnav-item--active" onclick="scrollReservar()">
     <span class="material-symbols-outlined bnav-icon">content_cut</span>
     <span class="bnav-label">Reservar</span>
   </button>
@@ -211,7 +309,7 @@
   </a>
 </nav>
 
-<!-- MODAL -->
+<!-- MODAL RESERVA -->
 <div class="modal-back" id="modal-reserva">
   <div class="modal">
     <div class="modal-header">
@@ -247,6 +345,14 @@
         <input class="form-input" id="inp-email" type="email" placeholder="tu@email.com" autocomplete="email">
       </div>
       <div class="form-group">
+        <label class="form-label">Gift Card (opcional)</label>
+        <div style="display:flex;gap:8px">
+          <input class="form-input" id="inp-giftcard" type="text" placeholder="GC-XXXXXXXX" style="flex:1;text-transform:uppercase">
+          <button class="btn-secondary" style="padding:8px 12px;font-size:13px;white-space:nowrap" onclick="validarGiftCard()">Aplicar</button>
+        </div>
+        <div id="gc-status" style="font-size:12px;margin-top:4px;display:none"></div>
+      </div>
+      <div class="form-group">
         <label class="form-label">Notas (opcional)</label>
         <textarea class="form-input form-textarea" id="inp-notas" placeholder="Referencias, consultas, etc."></textarea>
       </div>
@@ -259,9 +365,11 @@
 </div>
 
 <script src="js/api.js"></script>
+<script src="js/monitor.js"></script>
 <script src="js/calendar.js"></script>
 <script src="js/app.js"></script>
 <script>
+// ── Logo dinámico ─────────────────────────────────────────────
 window.addEventListener('load', function() {
   if (typeof LOGO_URL !== 'undefined' && LOGO_URL) {
     var brand = document.getElementById('nav-brand');
@@ -270,6 +378,51 @@ window.addEventListener('load', function() {
     if (fw) fw.innerHTML = '<img src="' + LOGO_URL + '" alt="Belleza Integral" class="footer-logo-img">';
   }
 });
+
+// ── Sonidos ───────────────────────────────────────────────────
+var _sonidoOn = localStorage.getItem('sound') !== 'off';
+function toggleSonido() {
+  _sonidoOn = !_sonidoOn;
+  localStorage.setItem('sound', _sonidoOn ? 'on' : 'off');
+  document.getElementById('sound-btn').textContent = _sonidoOn ? '🔔' : '🔕';
+}
+function playSound(id) {
+  if (!_sonidoOn) return;
+  var el = document.getElementById(id);
+  if (el) { el.currentTime = 0; el.play().catch(function(){}); }
+}
+(function(){ document.getElementById('sound-btn').textContent = _sonidoOn ? '🔔' : '🔕'; })();
+
+// ── Scroll reservar ───────────────────────────────────────────
+function scrollReservar() {
+  document.getElementById('reservar').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ── Gift card ─────────────────────────────────────────────────
+var _gcAplicada = null;
+async function validarGiftCard() {
+  var codigo = (document.getElementById('inp-giftcard').value || '').trim().toUpperCase();
+  var st = document.getElementById('gc-status');
+  if (!codigo) { st.style.display='none'; return; }
+  st.style.display = 'block';
+  st.style.color = '#6b7280';
+  st.textContent = 'Validando…';
+  try {
+    var res = await API.validarGiftCard(codigo);
+    if (res.ok) {
+      _gcAplicada = { codigo, saldo: res.saldo };
+      st.style.color = '#16a34a';
+      st.textContent = '✅ Gift card válida — Saldo: $' + res.saldo.toLocaleString('es-CL') + ' CLP';
+    } else {
+      _gcAplicada = null;
+      st.style.color = '#dc2626';
+      st.textContent = '❌ ' + (res.error || 'Gift card inválida');
+    }
+  } catch(e) {
+    st.style.color = '#dc2626';
+    st.textContent = '❌ Error al validar.';
+  }
+}
 </script>
 </body>
 </html>

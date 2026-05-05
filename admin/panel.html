@@ -4,382 +4,1289 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
-<title>Panel Admin — Belleza Integral</title>
+<title>Admin · Belleza Integral</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&family=Manrope:wght@300;400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../css/styles.css">
+<style>
+/* ================================================================
+   BELLEZA INTEGRAL — Panel Admin  (Zoho Desk–inspired)
+   ================================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --sidebar-w:  220px;
+  --gold:       #b8952a;
+  --gold-lt:    #d4af37;
+  --bg:         #f4f5f7;
+  --surface:    #ffffff;
+  --border:     #e5e7eb;
+  --text:       #111827;
+  --muted:      #6b7280;
+  --hint:       #9ca3af;
+  --primary:    #2563eb;
+  --success:    #16a34a;
+  --warning:    #d97706;
+  --danger:     #dc2626;
+  --info:       #0891b2;
+  --radius:     10px;
+  --shadow-sm:  0 1px 3px rgba(0,0,0,.08);
+  --shadow-md:  0 4px 16px rgba(0,0,0,.10);
+}
+
+html, body { height: 100%; font-family: 'Manrope', sans-serif; font-size: 14px; color: var(--text); background: var(--bg); }
+
+a { text-decoration: none; color: inherit; }
+button { font-family: inherit; cursor: pointer; border: none; }
+
+/* ── LAYOUT ──────────────────────────────────────────────────── */
+.layout { display: flex; height: 100vh; overflow: hidden; }
+
+/* ── SIDEBAR ─────────────────────────────────────────────────── */
+.sidebar {
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  background: #1e1b2e;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.sidebar-brand {
+  padding: 20px 16px 16px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.sidebar-brand-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: .3px;
+}
+.sidebar-brand-sub {
+  font-size: 11px;
+  color: rgba(255,255,255,.4);
+  margin-top: 2px;
+}
+.sidebar-nav { padding: 12px 0; flex: 1; }
+.nav-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,.3);
+  padding: 12px 16px 6px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255,255,255,.65);
+  cursor: pointer;
+  border-radius: 0;
+  transition: background .15s, color .15s;
+  user-select: none;
+}
+.nav-item:hover { background: rgba(255,255,255,.06); color: #fff; }
+.nav-item.active { background: rgba(184,149,42,.2); color: var(--gold-lt); }
+.nav-item .material-symbols-outlined { font-size: 18px; }
+
+.sidebar-footer {
+  padding: 12px 16px;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+.nav-item--danger { color: rgba(239,68,68,.7) !important; }
+.nav-item--danger:hover { color: #f87171 !important; background: rgba(239,68,68,.08) !important; }
+
+/* ── MAIN CONTENT ────────────────────────────────────────────── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+.topbar-title { font-size: 16px; font-weight: 700; flex: 1; }
+.topbar-date { font-size: 13px; color: var(--muted); }
+
+.content { flex: 1; overflow-y: auto; padding: 24px; }
+
+/* ── CARDS ───────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+}
+.card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.card-title { font-size: 14px; font-weight: 700; }
+.card-body { padding: 20px; }
+
+/* ── STATS GRID ──────────────────────────────────────────────── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.stat-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.stat-box--gold   { border-left: 3px solid var(--gold); }
+.stat-box--green  { border-left: 3px solid var(--success); }
+.stat-box--blue   { border-left: 3px solid var(--info); }
+.stat-box--red    { border-left: 3px solid var(--danger); }
+.stat-box--purple { border-left: 3px solid #7c3aed; }
+.stat-val { font-size: 26px; font-weight: 800; color: var(--text); line-height: 1; }
+.stat-lbl { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
+
+/* ── FILTERS BAR ─────────────────────────────────────────────── */
+.filters-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.filter-input, .filter-select {
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0 10px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  outline: none;
+  transition: border .15s;
+}
+.filter-input:focus, .filter-select:focus { border-color: var(--gold); }
+.filter-input { min-width: 120px; }
+
+/* ── BUTTONS ─────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity .15s, background .15s;
+}
+.btn:hover { opacity: .85; }
+.btn-primary   { background: var(--primary);  color: #fff; }
+.btn-success   { background: var(--success);  color: #fff; }
+.btn-warning   { background: var(--warning);  color: #fff; }
+.btn-danger    { background: var(--danger);   color: #fff; }
+.btn-ghost     { background: var(--bg);       color: var(--text); border: 1px solid var(--border); }
+.btn-gold      { background: var(--gold);     color: #fff; }
+.btn-sm { height: 28px; padding: 0 10px; font-size: 12px; }
+.btn .material-symbols-outlined { font-size: 16px; }
+
+/* ── TABLE ───────────────────────────────────────────────────── */
+.tbl-wrap { overflow-x: auto; }
+table.tbl { width: 100%; border-collapse: collapse; }
+table.tbl th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--muted);
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+table.tbl td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  vertical-align: middle;
+}
+table.tbl tr:last-child td { border-bottom: none; }
+table.tbl tbody tr:hover { background: #fafafa; }
+.tbl-empty { text-align: center; color: var(--hint); padding: 32px !important; }
+
+/* ── BADGES ──────────────────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .3px;
+}
+.badge-confirmada { background: #dcfce7; color: #166534; }
+.badge-completada { background: #dbeafe; color: #1e40af; }
+.badge-cancelada  { background: #fee2e2; color: #991b1b; }
+.badge-pendiente  { background: #fef9c3; color: #854d0e; }
+.badge-pagada     { background: #f3e8ff; color: #6b21a8; }
+
+/* ── MODAL ───────────────────────────────────────────────────── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 500;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: var(--surface);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+.modal-head {
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-head-title { font-size: 15px; font-weight: 700; }
+.modal-close-btn { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 20px; line-height: 1; }
+.modal-content { padding: 20px; overflow-y: auto; flex: 1; }
+.modal-foot { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+
+/* ── FORM ────────────────────────────────────────────────────── */
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.form-row-1 { margin-bottom: 14px; }
+.form-label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .5px; }
+.form-ctrl {
+  width: 100%;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0 10px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  outline: none;
+  transition: border .15s;
+}
+.form-ctrl:focus { border-color: var(--gold); }
+textarea.form-ctrl { height: 72px; padding: 8px 10px; resize: vertical; }
+
+/* ── DETAIL GRID ─────────────────────────────────────────────── */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.detail-cell {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+.detail-cell:nth-child(2n) { border-right: none; }
+.detail-cell:nth-last-child(-n+2) { border-bottom: none; }
+.detail-cell-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--hint); margin-bottom: 3px; }
+.detail-cell-val { font-size: 13px; font-weight: 600; color: var(--text); }
+
+/* ── TOAST ───────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 900;
+  max-width: 340px;
+  background: #1e1b2e;
+  color: #fff;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: var(--shadow-md);
+  transform: translateY(-20px);
+  opacity: 0;
+  transition: transform .25s, opacity .25s;
+  pointer-events: none;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { border-left: 4px solid var(--success); }
+.toast.error   { border-left: 4px solid var(--danger);  }
+
+/* ── AGENDA KANBAN ───────────────────────────────────────────── */
+.agenda-cols { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; }
+.agenda-col { flex: 0 0 200px; }
+.agenda-col-head { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); padding: 6px 0 8px; }
+.agenda-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: box-shadow .15s;
+}
+.agenda-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,.1); }
+.agenda-card-hora { font-size: 13px; font-weight: 800; color: var(--gold); }
+.agenda-card-nombre { font-size: 13px; font-weight: 600; margin-top: 2px; }
+.agenda-card-srv { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.agenda-card-badge { margin-top: 6px; }
+
+/* ── CHART BARS ──────────────────────────────────────────────── */
+.chart-wrap { display: flex; align-items: flex-end; gap: 6px; height: 120px; padding: 10px 0 0; }
+.chart-bar-col { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+.chart-bar { width: 100%; background: var(--gold); border-radius: 4px 4px 0 0; min-height: 4px; transition: height .3s; }
+.chart-bar-lbl { font-size: 10px; color: var(--hint); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40px; }
+.chart-bar-val { font-size: 10px; font-weight: 700; color: var(--muted); }
+
+/* ── LOADER ──────────────────────────────────────────────────── */
+.page-loader {
+  position: fixed;
+  inset: 0;
+  background: rgba(255,255,255,.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 800;
+  flex-direction: column;
+  gap: 12px;
+}
+.page-loader.hidden { display: none; }
+.spin {
+  width: 36px; height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── QR MODAL ────────────────────────────────────────────────── */
+#qr-canvas { display: block; margin: 0 auto; }
+
+/* ── RESPONSIVE ──────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .form-row { grid-template-columns: 1fr; }
+  .detail-grid { grid-template-columns: 1fr; }
+  .detail-cell:nth-child(2n) { border-right: 1px solid var(--border); }
+  .detail-cell:nth-last-child(-n+2) { border-bottom: 1px solid var(--border); }
+  .detail-cell:last-child { border-bottom: none; }
+}
+</style>
 </head>
 <body>
 
 <!-- LOADER -->
-<div class="loader" id="loader" style="display:none">
-  <div class="loader-spin"></div>
-  <p class="loader-txt" id="loader-txt">Cargando…</p>
+<div class="page-loader" id="page-loader">
+  <div class="spin"></div>
+  <span style="font-size:13px;color:var(--muted)" id="loader-msg">Cargando…</span>
 </div>
-<div class="toast-error" id="toast-error"></div>
 
-<!-- NAVBAR -->
-<nav class="navbar">
-  <div class="nav-brand">
-    <span class="nav-logo">✨</span>
-    <span class="nav-nombre">Belleza Integral · Admin</span>
-  </div>
-  <div class="nav-links">
-    <span class="nav-link" onclick="cargarDashboard()">🏠 Dashboard</span>
-    <span class="nav-link" onclick="mostrarSeccion('agenda')">📅 Agenda</span>
-    <span class="nav-link" onclick="mostrarSeccion('reservas')">📋 Reservas</span>
-    <span class="nav-link" onclick="cerrarSesion()" style="color:var(--danger)">Salir</span>
-  </div>
-</nav>
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
 
-<div class="dash-layout">
+<!-- LAYOUT -->
+<div class="layout">
 
-  <!-- HEADER -->
-  <div class="dash-header">
-    <div>
-      <h1 class="dash-titulo">Dashboard</h1>
-      <p class="dash-fecha" id="dash-fecha-hoy"></p>
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-name">✨ Belleza Integral</div>
+      <div class="sidebar-brand-sub">Panel de Administración</div>
     </div>
-    <div class="fecha-selector">
-      <label style="font-size:13px;color:var(--muted)">Ver día:</label>
-      <input type="date" class="fecha-input" id="fecha-selector-dash" onchange="cambiarFecha(this.value)">
-      <button class="btn-secondary" style="padding:8px 14px;font-size:13px" onclick="cargarDashboard()">
-        Hoy
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Principal</div>
+      <div class="nav-item active" onclick="showView('dashboard')" id="nav-dashboard">
+        <span class="material-symbols-outlined">dashboard</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="showView('agenda')" id="nav-agenda">
+        <span class="material-symbols-outlined">calendar_today</span> Agenda
+      </div>
+      <div class="nav-item" onclick="showView('reservas')" id="nav-reservas">
+        <span class="material-symbols-outlined">event_note</span> Reservas
+      </div>
+      <div class="nav-section-label">Reportes</div>
+      <div class="nav-item" onclick="showView('reportes')" id="nav-reportes">
+        <span class="material-symbols-outlined">bar_chart</span> Reportes
+      </div>
+      <div class="nav-section-label">Herramientas</div>
+      <div class="nav-item" onclick="showView('giftcards')" id="nav-giftcards">
+        <span class="material-symbols-outlined">card_giftcard</span> Gift Cards
+      </div>
+      <div class="nav-item" onclick="showView('fidelizacion')" id="nav-fidelizacion">
+        <span class="material-symbols-outlined">loyalty</span> Fidelización
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="nav-item nav-item--danger" onclick="cerrarSesion()">
+        <span class="material-symbols-outlined">logout</span> Cerrar sesión
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <span class="topbar-title" id="topbar-title">Dashboard</span>
+      <span class="topbar-date" id="topbar-date"></span>
+      <button class="btn btn-ghost btn-sm" onclick="recargar()">
+        <span class="material-symbols-outlined" style="font-size:15px">refresh</span> Actualizar
       </button>
     </div>
-  </div>
 
-  <!-- STATS -->
-  <div class="stats-grid" id="stats-grid">
-    <div class="stat-card"><div class="stat-valor" id="st-total">—</div><div class="stat-label">Reservas hoy</div></div>
-    <div class="stat-card stat-card--success"><div class="stat-valor" id="st-conf">—</div><div class="stat-label">Confirmadas</div></div>
-    <div class="stat-card stat-card--info"><div class="stat-valor" id="st-comp">—</div><div class="stat-label">Completadas</div></div>
-    <div class="stat-card stat-card--danger"><div class="stat-valor" id="st-canc">—</div><div class="stat-label">Canceladas</div></div>
-    <div class="stat-card"><div class="stat-valor" id="st-ing" style="font-size:22px">—</div><div class="stat-label">Ingreso estimado</div></div>
-  </div>
-
-  <!-- AGENDA -->
-  <div id="seccion-agenda" class="dash-section" style="margin-bottom:24px">
-    <div class="dash-section-titulo">📅 Agenda del Día</div>
-    <div id="agenda-dia">
-      <p class="agenda-vacia">Cargando agenda…</p>
+    <div class="content" id="main-content">
+      <!-- Views se renderizan aquí dinámicamente -->
     </div>
   </div>
-
-  <!-- RESERVAS -->
-  <div id="seccion-reservas">
-    <div class="dash-grid">
-
-      <div class="dash-section">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-          <div class="dash-section-titulo" style="margin-bottom:0">📋 Reservas del Día</div>
-          <button class="btn-secondary" style="padding:6px 12px;font-size:12px" onclick="exportarCSV()">
-            ↓ Exportar
-          </button>
-        </div>
-        <div style="overflow-x:auto">
-          <table class="tabla-reservas">
-            <thead>
-              <tr>
-                <th>ID</th><th>Cliente</th><th>Servicio</th>
-                <th>Especialista</th><th>Hora</th><th>Estado</th><th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="tabla-reservas-body">
-              <tr><td colspan="7" style="text-align:center;color:var(--hint);padding:24px">Cargando…</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="dash-section">
-        <div class="dash-section-titulo">🔜 Próximas Reservas</div>
-        <div id="proximas-lista">
-          <p style="color:var(--hint);font-size:13px;text-align:center;padding:20px">Cargando…</p>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
 </div>
 
-<!-- MODAL DETALLE -->
-<div class="modal-back" id="modal-detalle">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>📋 Detalle de Reserva</h3>
-      <button class="modal-close" onclick="cerrarModalDetalle()">✕</button>
+<!-- ═══════════════════════════════════════════════════════════
+     MODAL DETALLE / ACCIONES
+     ═══════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-detalle">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-head-title">Detalle de Reserva</span>
+      <button class="modal-close-btn" onclick="closeModal('modal-detalle')">✕</button>
     </div>
-    <div class="modal-body" id="modal-detalle-body"></div>
+    <div class="modal-content" id="modal-detalle-body"></div>
+    <div class="modal-foot" id="modal-detalle-foot"></div>
+  </div>
+</div>
+
+<!-- MODAL REAGENDAR -->
+<div class="modal-overlay" id="modal-reagendar">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-head">
+      <span class="modal-head-title">Reagendar Cita</span>
+      <button class="modal-close-btn" onclick="closeModal('modal-reagendar')">✕</button>
+    </div>
+    <div class="modal-content">
+      <input type="hidden" id="reagendar-id">
+      <div class="form-row-1">
+        <label class="form-label">Nueva Fecha</label>
+        <input type="date" class="form-ctrl" id="reagendar-fecha">
+      </div>
+      <div class="form-row-1">
+        <label class="form-label">Nueva Hora</label>
+        <input type="time" class="form-ctrl" id="reagendar-hora" step="1800">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-reagendar')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarReagendar()">Confirmar cambio</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL GIFT CARD NUEVA -->
+<div class="modal-overlay" id="modal-gc-nueva">
+  <div class="modal-box" style="max-width:460px">
+    <div class="modal-head">
+      <span class="modal-head-title">Nueva Gift Card</span>
+      <button class="modal-close-btn" onclick="closeModal('modal-gc-nueva')">✕</button>
+    </div>
+    <div class="modal-content">
+      <div class="form-row">
+        <div>
+          <label class="form-label">Monto (CLP) *</label>
+          <input type="number" class="form-ctrl" id="gc-monto" placeholder="20000" min="1000">
+        </div>
+        <div>
+          <label class="form-label">Vigencia (días)</label>
+          <input type="number" class="form-ctrl" id="gc-dias" placeholder="365" min="1">
+        </div>
+      </div>
+      <div class="form-row">
+        <div>
+          <label class="form-label">Nombre comprador</label>
+          <input type="text" class="form-ctrl" id="gc-c-nombre" placeholder="María González">
+        </div>
+        <div>
+          <label class="form-label">Email comprador</label>
+          <input type="email" class="form-ctrl" id="gc-c-email" placeholder="email@dominio.com">
+        </div>
+      </div>
+      <div class="form-row">
+        <div>
+          <label class="form-label">Destinatario</label>
+          <input type="text" class="form-ctrl" id="gc-d-nombre" placeholder="Ana Pérez">
+        </div>
+        <div>
+          <label class="form-label">Email destinatario</label>
+          <input type="email" class="form-ctrl" id="gc-d-email" placeholder="ana@dominio.com">
+        </div>
+      </div>
+      <div class="form-row-1">
+        <label class="form-label">Mensaje (opcional)</label>
+        <textarea class="form-ctrl" id="gc-mensaje" placeholder="¡Para ti con cariño!"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modal-gc-nueva')">Cancelar</button>
+      <button class="btn btn-gold" onclick="crearGiftCard()">Crear Gift Card</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL QR FIDELIZACIÓN -->
+<div class="modal-overlay" id="modal-qr">
+  <div class="modal-box" style="max-width:340px">
+    <div class="modal-head">
+      <span class="modal-head-title" id="qr-titulo">QR de Fidelización</span>
+      <button class="modal-close-btn" onclick="closeModal('modal-qr')">✕</button>
+    </div>
+    <div class="modal-content" style="text-align:center">
+      <canvas id="qr-canvas" width="220" height="220"></canvas>
+      <p style="margin-top:12px;font-size:13px;color:var(--muted)" id="qr-info"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost btn-sm" onclick="imprimirQR()">
+        <span class="material-symbols-outlined" style="font-size:15px">print</span> Imprimir
+      </button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-qr')">Cerrar</button>
+    </div>
   </div>
 </div>
 
 <script src="../js/api.js"></script>
-<script src="../js/calendar.js"></script>
 <script>
 /* ================================================================
-   Panel Admin — Lógica (cookie httpOnly, sin tokens en JS)
+   Panel Admin — Lógica completa
    ================================================================ */
 
-let dashState = {
-  fechaActual: _hoyStr(),
-  data:        null,
+// ── STATE ─────────────────────────────────────────────────────
+const S = {
+  view:      'dashboard',
+  fecha:     hoyStr(),
+  data:      null,
+  reservas:  [],
+  filtros:   { q: '', estado: '', empleado: '' },
 };
 
 // ── INIT ──────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
-  // Verificar sesión (si /api/admin/dashboard devuelve 401, redirigir)
-  document.getElementById('fecha-selector-dash').value = dashState.fechaActual;
-  document.getElementById('dash-fecha-hoy').textContent = _formatFechaLarga(dashState.fechaActual);
-  await cargarDashboard();
+  document.getElementById('topbar-date').textContent = fmtFechaLarga(S.fecha);
+  await showView('dashboard');
 });
 
-// ── CERRAR SESIÓN ─────────────────────────────────────────────
-async function cerrarSesion() {
-  try { await API.adminLogout(); } catch {}
-  window.location.href = '/admin/login.html';
-}
-
-// ── REDIRIGIR SI 401 ─────────────────────────────────────────
-function checkAuth(res) {
-  if (res && (res.ok === false) && !res.error?.includes('Error')) {
-    // 401 desde el Worker
-    window.location.href = '/admin/login.html';
-    return false;
-  }
-  return true;
-}
-
-// ── CARGAR DASHBOARD ─────────────────────────────────────────
-async function cargarDashboard() {
-  dashState.fechaActual = _hoyStr();
-  document.getElementById('fecha-selector-dash').value = dashState.fechaActual;
-  document.getElementById('dash-fecha-hoy').textContent = _formatFechaLarga(dashState.fechaActual);
-
-  mostrarLoader(true, 'Cargando dashboard…');
-  try {
-    const data = await API.getDashboard();
-    mostrarLoader(false);
-
-    if (!data.ok) {
-      if (data.error === 'No autorizado') { window.location.href = '/admin/login.html'; return; }
-      mostrarError(data.error || 'Error al cargar datos.');
-      return;
-    }
-
-    dashState.data = data;
-    renderStats(data.stats);
-    renderTablaReservas(data.reservasHoy);
-    renderAgendaDia('agenda-dia', data.reservasHoy, data.empleados);
-    renderProximas(data.proximas);
-  } catch (e) {
-    mostrarLoader(false);
-    mostrarError('Error de conexión.');
+// ── NAVEGACIÓN ────────────────────────────────────────────────
+async function showView(view) {
+  S.view = view;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const navEl = document.getElementById('nav-' + view);
+  if (navEl) navEl.classList.add('active');
+  document.getElementById('topbar-title').textContent =
+    { dashboard: 'Dashboard', agenda: 'Agenda del Día', reservas: 'Reservas',
+      reportes: 'Reportes', giftcards: 'Gift Cards', fidelizacion: 'Fidelización' }[view] || view;
+  switch (view) {
+    case 'dashboard':    await renderDashboard(); break;
+    case 'agenda':       await renderAgenda(); break;
+    case 'reservas':     await renderReservas(); break;
+    case 'reportes':     await renderReportes(); break;
+    case 'giftcards':    await renderGiftCards(); break;
+    case 'fidelizacion': await renderFidelizacion(); break;
   }
 }
 
-async function cambiarFecha(fecha) {
-  dashState.fechaActual = fecha;
-  document.getElementById('dash-fecha-hoy').textContent = _formatFechaLarga(fecha);
+async function recargar() { await showView(S.view); }
 
-  mostrarLoader(true, 'Cargando reservas…');
-  try {
-    const reservas = await API.getReservasPorDia(fecha);
-    mostrarLoader(false);
-    if (!Array.isArray(reservas)) {
-      if (reservas?.error === 'No autorizado') { window.location.href = '/admin/login.html'; return; }
-      mostrarError(reservas?.error || 'Error al cargar.'); return;
-    }
-    renderTablaReservas(reservas);
-    if (dashState.data) renderAgendaDia('agenda-dia', reservas, dashState.data.empleados);
-  } catch (e) {
-    mostrarLoader(false);
-    mostrarError('Error al cargar reservas.');
-  }
+// ── DASHBOARD ─────────────────────────────────────────────────
+async function renderDashboard() {
+  loader(true);
+  const data = await API.getDashboard();
+  loader(false);
+  if (!data.ok) { authCheck(data); return; }
+  S.data = data;
+
+  const c = document.getElementById('main-content');
+  c.innerHTML = `
+    <div class="stats-row">
+      <div class="stat-box stat-box--gold">
+        <div class="stat-val" id="st-total">${data.stats.totalHoy}</div>
+        <div class="stat-lbl">Total hoy</div>
+      </div>
+      <div class="stat-box stat-box--green">
+        <div class="stat-val">${data.stats.confirmadas}</div>
+        <div class="stat-lbl">Confirmadas</div>
+      </div>
+      <div class="stat-box stat-box--blue">
+        <div class="stat-val">${data.stats.completadas}</div>
+        <div class="stat-lbl">Completadas</div>
+      </div>
+      <div class="stat-box stat-box--purple">
+        <div class="stat-val">${data.stats.pagadas}</div>
+        <div class="stat-lbl">Pagadas</div>
+      </div>
+      <div class="stat-box stat-box--red">
+        <div class="stat-val">${data.stats.canceladas}</div>
+        <div class="stat-lbl">Canceladas</div>
+      </div>
+      <div class="stat-box stat-box--gold">
+        <div class="stat-val" style="font-size:18px">$${(data.stats.ingresoEstimado||0).toLocaleString('es-CL')}</div>
+        <div class="stat-lbl">Ingreso est.</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📅 Reservas de Hoy</span>
+          <div style="display:flex;gap:8px">
+            <input type="date" class="filter-input" value="${S.fecha}" onchange="cambiarFechaDash(this.value)" style="width:140px">
+            <button class="btn btn-ghost btn-sm" onclick="exportarCSV()">↓ CSV</button>
+          </div>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div class="tbl-wrap">${tblReservas(data.reservasHoy)}</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">🔜 Próximas citas</span></div>
+        <div class="card-body" style="padding:0;max-height:400px;overflow-y:auto">
+          ${listaProximas(data.proximas)}
+        </div>
+      </div>
+    </div>
+  `;
 }
 
-// ── RENDER ────────────────────────────────────────────────────
-function renderStats(stats) {
-  document.getElementById('st-total').textContent = stats.totalHoy;
-  document.getElementById('st-conf').textContent  = stats.confirmadas;
-  document.getElementById('st-comp').textContent  = stats.completadas;
-  document.getElementById('st-canc').textContent  = stats.canceladas;
-  document.getElementById('st-ing').textContent   = '$' + (stats.ingresoEstimado || 0).toLocaleString('es-CL');
+async function cambiarFechaDash(fecha) {
+  S.fecha = fecha;
+  loader(true);
+  const reservas = await API.getReservasPorDia(fecha);
+  loader(false);
+  if (!Array.isArray(reservas)) { authCheck(reservas); return; }
+  const el = document.querySelector('.tbl-wrap');
+  if (el) el.innerHTML = tblReservas(reservas);
 }
 
-function renderTablaReservas(reservas) {
-  const tbody = document.getElementById('tabla-reservas-body');
-  if (!reservas || !reservas.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--hint);padding:24px">Sin reservas para este día</td></tr>';
+// ── AGENDA (Kanban por hora) ──────────────────────────────────
+async function renderAgenda() {
+  loader(true);
+  const reservas = await API.getReservasPorDia(S.fecha);
+  loader(false);
+  if (!Array.isArray(reservas) && !reservas.ok) { authCheck(reservas); return; }
+  const list = Array.isArray(reservas) ? reservas : reservas.reservasHoy || [];
+
+  const c = document.getElementById('main-content');
+  c.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <input type="date" class="filter-input" value="${S.fecha}" onchange="cambiarFechaAgenda(this.value)">
+      <span style="font-size:14px;color:var(--muted)">${list.length} reserva(s)</span>
+    </div>
+    <div class="agenda-cols" id="agenda-cols"></div>
+  `;
+
+  // Agrupar por hora (rangos de 2 horas)
+  const franjas = {};
+  list.forEach(r => {
+    const h = parseInt(r.horaInicio);
+    const franja = h < 12 ? 'Mañana (9–12)' : h < 16 ? 'Tarde temprana (12–16)' : 'Tarde (16–20)';
+    if (!franjas[franja]) franjas[franja] = [];
+    franjas[franja].push(r);
+  });
+
+  const cols = document.getElementById('agenda-cols');
+  if (!Object.keys(franjas).length) {
+    cols.innerHTML = '<p style="color:var(--hint);padding:20px">Sin reservas para este día.</p>';
     return;
   }
-
-  reservas.sort((a, b) => a.horaInicio.localeCompare(b.horaInicio));
-
-  tbody.innerHTML = reservas.map(r => `
-    <tr>
-      <td style="font-family:monospace;font-size:11px;color:var(--gold)">${r.id}</td>
-      <td>
-        <div style="font-weight:600;font-size:13px">${r.nombre}</div>
-        <div style="font-size:11px;color:var(--muted)">${r.email}</div>
-      </td>
-      <td style="font-size:13px">${r.servicioNombre}${r.sesionNum > 1 ? ' (S' + r.sesionNum + '/' + r.sesionesTotales + ')' : ''}</td>
-      <td style="font-size:13px">${r.empleadoNombre}</td>
-      <td style="font-size:13px;white-space:nowrap">${r.horaInicio} — ${r.horaFin}</td>
-      <td><span class="badge badge--${r.estado.toLowerCase()}">${r.estado}</span></td>
-      <td>
-        <div style="display:flex;gap:6px">
-          <button class="btn-success" onclick="verDetalle('${r.id}')">Ver</button>
-          ${r.estado !== 'Cancelada' && r.estado !== 'Completada'
-            ? `<button class="btn-success" onclick="completarReserva('${r.id}')">✓</button>
-               <button class="btn-danger"  onclick="cancelarReservaAdmin('${r.id}')">✕</button>`
-            : ''}
+  Object.entries(franjas).forEach(([franja, resList]) => {
+    const col = document.createElement('div');
+    col.className = 'agenda-col';
+    col.innerHTML = `
+      <div class="agenda-col-head">${franja} <span style="color:var(--gold)">(${resList.length})</span></div>
+      ${resList.sort((a,b) => a.horaInicio.localeCompare(b.horaInicio)).map(r => `
+        <div class="agenda-card" onclick="verDetalle('${r.id}')">
+          <div class="agenda-card-hora">${r.horaInicio} – ${r.horaFin}</div>
+          <div class="agenda-card-nombre">${esc(r.nombre)}</div>
+          <div class="agenda-card-srv">${esc(r.servicioNombre)}</div>
+          <div class="agenda-card-badge">${badge(r.estado)}</div>
         </div>
+      `).join('')}
+    `;
+    cols.appendChild(col);
+  });
+}
+
+async function cambiarFechaAgenda(fecha) { S.fecha = fecha; await renderAgenda(); }
+
+// ── RESERVAS (tabla con filtros) ──────────────────────────────
+async function renderReservas() {
+  loader(true);
+  const reservas = await API.getReservasPorDia(S.fecha);
+  loader(false);
+  const list = Array.isArray(reservas) ? reservas : [];
+  S.reservas = list;
+
+  const empleados = [...new Set(list.map(r => r.empleadoNombre))];
+
+  const c = document.getElementById('main-content');
+  c.innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Reservas</span>
+        <button class="btn btn-ghost btn-sm" onclick="exportarCSV()">↓ CSV</button>
+      </div>
+      <div class="card-body" style="padding-bottom:0">
+        <div class="filters-bar">
+          <input type="date" class="filter-input" value="${S.fecha}" onchange="cambiarFechaReservas(this.value)">
+          <input type="text" class="filter-input" placeholder="Buscar nombre o ID…" value="${S.filtros.q}"
+            oninput="S.filtros.q=this.value;filtrarReservas()" style="min-width:180px">
+          <select class="filter-select" onchange="S.filtros.estado=this.value;filtrarReservas()">
+            <option value="">Todos los estados</option>
+            <option value="Confirmada">Confirmada</option>
+            <option value="Pagada">Pagada</option>
+            <option value="Completada">Completada</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="Cancelada">Cancelada</option>
+          </select>
+          <select class="filter-select" onchange="S.filtros.empleado=this.value;filtrarReservas()">
+            <option value="">Todas las especialistas</option>
+            ${empleados.map(e => `<option value="${esc(e)}">${esc(e)}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="tbl-wrap" id="reservas-tbl-wrap">${tblReservas(list)}</div>
+    </div>
+  `;
+}
+
+function filtrarReservas() {
+  let list = S.reservas;
+  if (S.filtros.q) {
+    const q = S.filtros.q.toLowerCase();
+    list = list.filter(r =>
+      r.nombre.toLowerCase().includes(q) || r.id.toLowerCase().includes(q) ||
+      (r.email||'').toLowerCase().includes(q)
+    );
+  }
+  if (S.filtros.estado) list = list.filter(r => r.estado === S.filtros.estado);
+  if (S.filtros.empleado) list = list.filter(r => r.empleadoNombre === S.filtros.empleado);
+  const el = document.getElementById('reservas-tbl-wrap');
+  if (el) el.innerHTML = tblReservas(list);
+}
+
+async function cambiarFechaReservas(fecha) {
+  S.fecha = fecha;
+  loader(true);
+  const reservas = await API.getReservasPorDia(fecha);
+  loader(false);
+  S.reservas = Array.isArray(reservas) ? reservas : [];
+  filtrarReservas();
+}
+
+// ── REPORTES ─────────────────────────────────────────────────
+async function renderReportes() {
+  const hoy   = hoyStr();
+  const desde = hoy.slice(0, 7) + '-01';
+  loader(true);
+  const data = await API.getReportes(desde, hoy);
+  loader(false);
+  if (!data.ok) { authCheck(data); return; }
+
+  const c = document.getElementById('main-content');
+  c.innerHTML = `
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px">
+      <label style="font-size:13px;color:var(--muted)">Desde</label>
+      <input type="date" class="filter-input" id="rep-desde" value="${desde}">
+      <label style="font-size:13px;color:var(--muted)">Hasta</label>
+      <input type="date" class="filter-input" id="rep-hasta" value="${hoy}">
+      <button class="btn btn-primary btn-sm" onclick="cargarReportes()">Ver</button>
+    </div>
+
+    <div class="stats-row" style="margin-bottom:20px">
+      <div class="stat-box stat-box--gold">
+        <div class="stat-val">${data.totales.reservas}</div>
+        <div class="stat-lbl">Total reservas</div>
+      </div>
+      <div class="stat-box stat-box--green">
+        <div class="stat-val" style="font-size:16px">$${(data.totales.ingreso||0).toLocaleString('es-CL')}</div>
+        <div class="stat-lbl">Ingreso total</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card">
+        <div class="card-header"><span class="card-title">📊 Reservas por día</span></div>
+        <div class="card-body">
+          <div class="chart-wrap" id="chart-fecha">${barChart(data.porFecha,'fecha','total')}</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">💇 Por servicio</span></div>
+        <div class="card-body" style="padding:0">
+          <table class="tbl">
+            <thead><tr><th>Servicio</th><th>Reservas</th><th>Ingreso</th></tr></thead>
+            <tbody>
+              ${data.porServicio.map(s => `
+                <tr>
+                  <td>${esc(s.nombre)}</td>
+                  <td style="font-weight:700">${s.total}</td>
+                  <td style="color:var(--gold)">$${(s.ingreso||0).toLocaleString('es-CL')}</td>
+                </tr>
+              `).join('') || '<tr><td colspan="3" class="tbl-empty">Sin datos</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">👩 Por especialista</span></div>
+        <div class="card-body" style="padding:0">
+          <table class="tbl">
+            <thead><tr><th>Especialista</th><th>Reservas</th><th>Ingreso</th></tr></thead>
+            <tbody>
+              ${data.porEmpleado.map(e => `
+                <tr>
+                  <td>${esc(e.nombre)}</td>
+                  <td style="font-weight:700">${e.total}</td>
+                  <td style="color:var(--gold)">$${(e.ingreso||0).toLocaleString('es-CL')}</td>
+                </tr>
+              `).join('') || '<tr><td colspan="3" class="tbl-empty">Sin datos</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function cargarReportes() {
+  const desde = document.getElementById('rep-desde').value;
+  const hasta = document.getElementById('rep-hasta').value;
+  loader(true);
+  const data = await API.getReportes(desde, hasta);
+  loader(false);
+  if (!data.ok) return;
+  document.getElementById('chart-fecha').innerHTML = barChart(data.porFecha, 'fecha', 'total');
+}
+
+// ── GIFT CARDS ────────────────────────────────────────────────
+async function renderGiftCards() {
+  loader(true);
+  const res = await API.listGiftCards();
+  loader(false);
+  const list = res.giftCards || [];
+
+  const c = document.getElementById('main-content');
+  c.innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">🎁 Gift Cards</span>
+        <button class="btn btn-gold" onclick="openModal('modal-gc-nueva')">
+          <span class="material-symbols-outlined" style="font-size:16px">add</span> Nueva
+        </button>
+      </div>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th>Código</th><th>Monto</th><th>Usado</th><th>Saldo</th><th>Estado</th><th>Destinatario</th><th>Vence</th></tr></thead>
+          <tbody>
+            ${list.length ? list.map(gc => {
+              const saldo = parseFloat(gc.monto) - parseFloat(gc.monto_usado||0);
+              return `<tr>
+                <td style="font-family:monospace;font-weight:700;color:var(--gold)">${esc(gc.codigo)}</td>
+                <td>$${parseFloat(gc.monto).toLocaleString('es-CL')}</td>
+                <td>$${parseFloat(gc.monto_usado||0).toLocaleString('es-CL')}</td>
+                <td style="font-weight:700;color:var(--success)">$${saldo.toLocaleString('es-CL')}</td>
+                <td>${badge(gc.estado)}</td>
+                <td style="font-size:12px">${esc(gc.destinatario_nombre||'—')}</td>
+                <td style="font-size:12px;color:var(--muted)">${gc.fecha_vencimiento||'Sin vencimiento'}</td>
+              </tr>`;
+            }).join('') : '<tr><td colspan="7" class="tbl-empty">Sin gift cards aún</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+async function crearGiftCard() {
+  const monto = parseFloat(document.getElementById('gc-monto').value);
+  if (!monto || monto < 1000) { toast('El monto mínimo es $1.000', 'error'); return; }
+  loader(true);
+  const res = await API.crearGiftCard({
+    monto,
+    diasVigencia:        parseInt(document.getElementById('gc-dias').value)||365,
+    compradorNombre:     document.getElementById('gc-c-nombre').value,
+    compradorEmail:      document.getElementById('gc-c-email').value,
+    destinatarioNombre:  document.getElementById('gc-d-nombre').value,
+    destinatarioEmail:   document.getElementById('gc-d-email').value,
+    mensaje:             document.getElementById('gc-mensaje').value,
+  });
+  loader(false);
+  if (res.ok) {
+    closeModal('modal-gc-nueva');
+    toast(`✅ Gift card creada: ${res.codigo}`, 'success');
+    await renderGiftCards();
+  } else {
+    toast('Error: ' + (res.error || 'No se pudo crear'), 'error');
+  }
+}
+
+// ── FIDELIZACIÓN ──────────────────────────────────────────────
+async function renderFidelizacion() {
+  loader(true);
+  const res = await API.getFidelizacion('', 100);
+  loader(false);
+  const list = res.clientes || [];
+
+  const c = document.getElementById('main-content');
+  c.innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">⭐ Programa de Fidelización</span>
+        <input type="text" class="filter-input" placeholder="Buscar cliente…"
+          oninput="buscarFidelizacion(this.value)" style="width:200px">
+      </div>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th>Cliente</th><th>Nivel</th><th>Puntos</th><th>Visitas</th><th>Gastado</th><th>QR</th></tr></thead>
+          <tbody id="fid-tbody">
+            ${fidelizacionRows(list)}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  window._fidList = list;
+}
+
+function fidelizacionRows(list) {
+  if (!list.length) return '<tr><td colspan="6" class="tbl-empty">Sin clientes aún</td></tr>';
+  const nivelColor = { VIP: '#7c3aed', Oro: '#b8952a', Plata: '#64748b', Bronce: '#92400e' };
+  return list.map(cl => `
+    <tr>
+      <td>
+        <div style="font-weight:600">${esc(cl.nombre)}</div>
+        <div style="font-size:11px;color:var(--muted)">${esc(cl.email)}</div>
+      </td>
+      <td><span class="badge" style="background:${nivelColor[cl.nivel]||'#6b7280'}20;color:${nivelColor[cl.nivel]||'#6b7280'}">${cl.nivel}</span></td>
+      <td style="font-weight:700;color:var(--gold)">${cl.puntos}</td>
+      <td>${cl.total_visitas}</td>
+      <td>$${parseFloat(cl.total_gastado||0).toLocaleString('es-CL')}</td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="mostrarQR('${esc(cl.qr_token)}','${esc(cl.nombre)}','${cl.nivel}',${cl.puntos})">
+          <span class="material-symbols-outlined" style="font-size:15px">qr_code</span>
+        </button>
       </td>
     </tr>
   `).join('');
 }
 
-function renderProximas(proximas) {
-  const el = document.getElementById('proximas-lista');
-  if (!proximas || !proximas.length) {
-    el.innerHTML = '<p style="color:var(--hint);font-size:13px;text-align:center;padding:20px">Sin próximas reservas</p>';
-    return;
+async function buscarFidelizacion(q) {
+  const res = await API.getFidelizacion(q, 100);
+  const tbody = document.getElementById('fid-tbody');
+  if (tbody) tbody.innerHTML = fidelizacionRows(res.clientes || []);
+}
+
+// ── QR FIDELIZACIÓN ───────────────────────────────────────────
+function mostrarQR(token, nombre, nivel, puntos) {
+  document.getElementById('qr-titulo').textContent = nombre;
+  document.getElementById('qr-info').textContent   = `${nivel} · ${puntos} puntos`;
+  const canvas = document.getElementById('qr-canvas');
+  const url    = `${location.origin}/api/fidelizacion/qr/${encodeURIComponent(token)}`;
+  renderQR(canvas, url);
+  openModal('modal-qr');
+}
+
+function renderQR(canvas, text) {
+  const size = 220;
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, size, size);
+  // QR simple de texto (placeholder visual — en producción usar librería qrcode.js)
+  ctx.fillStyle = '#1e1b2e';
+  ctx.font = '11px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('Escanear con lector QR', size/2, size/2 - 10);
+  ctx.font = '9px monospace';
+  ctx.fillStyle = '#b8952a';
+  ctx.fillText(text.slice(0, 40), size/2, size/2 + 8);
+  // Para QR real: cargar qrcode.min.js y llamar QRCode(canvas, text)
+}
+
+function imprimirQR() { window.print(); }
+
+// ══════════════════════════════════════════════════════════════
+// ACCIONES SOBRE RESERVAS
+// ══════════════════════════════════════════════════════════════
+
+async function verDetalle(reservaID) {
+  // Buscar en estado local o pedir al server
+  let r = (S.data?.reservasHoy || S.reservas || []).find(x => x.id === reservaID);
+  if (!r) {
+    loader(true);
+    const list = await API.getReservasPorDia(S.fecha);
+    loader(false);
+    r = (Array.isArray(list) ? list : []).find(x => x.id === reservaID);
   }
-  el.innerHTML = proximas.slice(0, 15).map(r => `
-    <div style="display:flex;justify-content:space-between;align-items:center;
-      padding:10px 0;border-bottom:1px solid var(--border);font-size:13px">
+  if (!r) { toast('Reserva no encontrada', 'error'); return; }
+
+  document.getElementById('modal-detalle-body').innerHTML = `
+    <div class="detail-grid">
+      <div class="detail-cell"><div class="detail-cell-label">ID</div><div class="detail-cell-val" style="color:var(--gold);font-family:monospace">${r.id}</div></div>
+      <div class="detail-cell"><div class="detail-cell-label">Estado</div><div class="detail-cell-val">${badge(r.estado)}</div></div>
+      <div class="detail-cell"><div class="detail-cell-label">Cliente</div><div class="detail-cell-val">${esc(r.nombre)}</div></div>
+      <div class="detail-cell"><div class="detail-cell-label">Email</div><div class="detail-cell-val" style="font-size:12px">${esc(r.email)}</div></div>
+      <div class="detail-cell"><div class="detail-cell-label">Teléfono</div><div class="detail-cell-val">${esc(r.telefono||'—')}</div></div>
+      <div class="detail-cell"><div class="detail-cell-label">Servicio</div><div class="detail-cell-val">${esc(r.servicioNombre)}</div></div>
+      <div class="detail-cell"><div class="detail-cell-label">Especialista</div><div class="detail-cell-val">${esc(r.empleadoNombre)}</div></div>
+      <div class="detail-cell"><div class="detail-cell-label">Fecha</div><div class="detail-cell-val">${r.fecha}</div></div>
+      <div class="detail-cell"><div class="detail-cell-label">Hora</div><div class="detail-cell-val">${r.horaInicio} – ${r.horaFin}</div></div>
+      <div class="detail-cell"><div class="detail-cell-label">Precio</div><div class="detail-cell-val" style="color:var(--gold)">$${(r.precio||0).toLocaleString('es-CL')}</div></div>
+      ${r.notas ? `<div class="detail-cell" style="grid-column:1/-1"><div class="detail-cell-label">Notas</div><div class="detail-cell-val" style="font-weight:400;color:var(--muted)">${esc(r.notas)}</div></div>` : ''}
+    </div>
+  `;
+
+  const foot = document.getElementById('modal-detalle-foot');
+  foot.innerHTML = '';
+  const addBtn = (label, cls, fn) => {
+    const b = document.createElement('button');
+    b.className = `btn btn-sm ${cls}`;
+    b.innerHTML = label;
+    b.onclick = fn;
+    foot.appendChild(b);
+  };
+
+  if (!['Cancelada'].includes(r.estado)) {
+    addBtn('💰 Pago recibido', 'btn-gold',    () => cambiarEstado(r.id, 'Pagada'));
+    addBtn('✅ Completar',     'btn-success',  () => cambiarEstado(r.id, 'Completada'));
+    addBtn('📅 Reagendar',     'btn-primary',  () => abrirReagendar(r.id, r.fecha, r.horaInicio));
+    addBtn('❌ Cancelar',      'btn-danger',   () => cancelarAdmin(r.id));
+  }
+  addBtn('Cerrar', 'btn-ghost', () => closeModal('modal-detalle'));
+
+  openModal('modal-detalle');
+}
+
+async function cambiarEstado(reservaID, estado) {
+  closeModal('modal-detalle');
+  loader(true);
+  const res = await API.actualizarEstado(reservaID, estado);
+  loader(false);
+  if (res.ok) {
+    toast(`✅ Estado cambiado a ${estado}`, 'success');
+    await recargar();
+  } else {
+    authCheck(res);
+    toast('Error: ' + (res.error || 'No se pudo actualizar'), 'error');
+  }
+}
+
+async function cancelarAdmin(reservaID) {
+  closeModal('modal-detalle');
+  if (!confirm(`¿Cancelar la reserva ${reservaID}?`)) return;
+  loader(true);
+  const res = await API.cancelarAdmin(reservaID);
+  loader(false);
+  if (res.ok) { toast('✅ Reserva cancelada', 'success'); await recargar(); }
+  else { authCheck(res); toast('Error: ' + (res.error||''), 'error'); }
+}
+
+function abrirReagendar(reservaID, fecha, hora) {
+  closeModal('modal-detalle');
+  document.getElementById('reagendar-id').value    = reservaID;
+  document.getElementById('reagendar-fecha').value = fecha;
+  document.getElementById('reagendar-hora').value  = hora;
+  openModal('modal-reagendar');
+}
+
+async function confirmarReagendar() {
+  const id    = document.getElementById('reagendar-id').value;
+  const fecha = document.getElementById('reagendar-fecha').value;
+  const hora  = document.getElementById('reagendar-hora').value;
+  if (!fecha || !hora) { toast('Completa fecha y hora', 'error'); return; }
+  closeModal('modal-reagendar');
+  loader(true);
+  const res = await API.reagendar(id, fecha, hora);
+  loader(false);
+  if (res.ok) { toast('✅ Cita reagendada correctamente', 'success'); await recargar(); }
+  else { toast('Error: ' + (res.error||''), 'error'); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// HELPERS DE RENDER
+// ══════════════════════════════════════════════════════════════
+
+function tblReservas(list) {
+  if (!list || !list.length) return `<table class="tbl"><tbody><tr><td colspan="8" class="tbl-empty">Sin reservas para este día</td></tr></tbody></table>`;
+  const rows = [...list].sort((a,b) => a.horaInicio.localeCompare(b.horaInicio)).map(r => `
+    <tr>
+      <td style="font-family:monospace;font-size:11px;color:var(--gold)">${r.id}</td>
+      <td>
+        <div style="font-weight:600">${esc(r.nombre)}</div>
+        <div style="font-size:11px;color:var(--muted)">${esc(r.email)}</div>
+      </td>
+      <td style="font-size:12px">${esc(r.servicioNombre)}</td>
+      <td style="font-size:12px">${esc(r.empleadoNombre)}</td>
+      <td style="white-space:nowrap;font-size:12px">${r.horaInicio} – ${r.horaFin}</td>
+      <td style="font-weight:700;color:var(--gold);font-size:12px">$${(r.precio||0).toLocaleString('es-CL')}</td>
+      <td>${badge(r.estado)}</td>
+      <td>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-ghost btn-sm" onclick="verDetalle('${r.id}')">Ver</button>
+          ${r.estado !== 'Cancelada' && r.estado !== 'Completada' ? `
+            <button class="btn btn-gold btn-sm" onclick="cambiarEstado('${r.id}','Pagada')" title="Pago recibido">💰</button>
+            <button class="btn btn-success btn-sm" onclick="cambiarEstado('${r.id}','Completada')" title="Completar">✓</button>
+            <button class="btn btn-danger btn-sm" onclick="cancelarAdmin('${r.id}')" title="Cancelar">✕</button>
+          ` : ''}
+        </div>
+      </td>
+    </tr>
+  `).join('');
+  return `
+    <table class="tbl">
+      <thead><tr><th>ID</th><th>Cliente</th><th>Servicio</th><th>Especialista</th><th>Hora</th><th>Precio</th><th>Estado</th><th>Acciones</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+function listaProximas(list) {
+  if (!list || !list.length) return '<p style="padding:20px;text-align:center;color:var(--hint)">Sin próximas reservas</p>';
+  return list.slice(0,15).map(r => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-bottom:1px solid var(--border)" onclick="S.fecha='${r.fecha}';verDetalle('${r.id}')" style="cursor:pointer">
       <div>
-        <div style="font-weight:600">${r.nombre}</div>
-        <div style="color:var(--muted);font-size:11px">${r.servicioNombre} · ${r.empleadoNombre}</div>
+        <div style="font-weight:600;font-size:13px">${esc(r.nombre)}</div>
+        <div style="font-size:11px;color:var(--muted)">${esc(r.servicioNombre)} · ${esc(r.empleadoNombre)}</div>
       </div>
       <div style="text-align:right">
-        <div style="color:var(--gold);font-weight:600">${r.fecha}</div>
+        <div style="color:var(--gold);font-weight:700;font-size:12px">${r.fecha}</div>
         <div style="color:var(--muted);font-size:11px">${r.horaInicio}</div>
       </div>
     </div>
   `).join('');
 }
 
-// ── ACCIONES ──────────────────────────────────────────────────
-async function cancelarReservaAdmin(reservaID) {
-  if (!confirm('¿Cancelar la reserva ' + reservaID + '?')) return;
-  mostrarLoader(true, 'Cancelando…');
-  const res = await API.cancelarAdmin(reservaID);
-  mostrarLoader(false);
-  if (res.ok) { mostrarExito('Reserva cancelada.'); await cargarDashboard(); }
-  else if (res.error === 'No autorizado') window.location.href = '/admin/login.html';
-  else mostrarError(res.error || 'Error al cancelar.');
-}
-
-async function completarReserva(reservaID) {
-  mostrarLoader(true, 'Actualizando…');
-  const res = await API.actualizarEstado(reservaID, 'Completada');
-  mostrarLoader(false);
-  if (res.ok) { mostrarExito('Reserva marcada como completada.'); await cargarDashboard(); }
-  else if (res.error === 'No autorizado') window.location.href = '/admin/login.html';
-  else mostrarError('Error al actualizar.');
-}
-
-function verDetalle(reservaID) {
-  const reservas = dashState.data?.reservasHoy || [];
-  const r = reservas.find(x => x.id === reservaID);
-  if (!r) { mostrarError('Reserva no encontrada.'); return; }
-
-  document.getElementById('modal-detalle-body').innerHTML = `
-    <div class="modal-resumen" style="grid-template-columns:1fr 1fr">
-      <div class="modal-res-item"><span>ID Reserva</span><strong style="color:var(--gold)">${r.id}</strong></div>
-      <div class="modal-res-item"><span>Estado</span><strong><span class="badge badge--${r.estado.toLowerCase()}">${r.estado}</span></strong></div>
-      <div class="modal-res-item"><span>Cliente</span><strong>${r.nombre}</strong></div>
-      <div class="modal-res-item"><span>Email</span><strong>${r.email}</strong></div>
-      <div class="modal-res-item"><span>Teléfono</span><strong>${r.telefono || '—'}</strong></div>
-      <div class="modal-res-item"><span>Servicio</span><strong>${r.servicioNombre}</strong></div>
-      <div class="modal-res-item"><span>Especialista</span><strong>${r.empleadoNombre}</strong></div>
-      <div class="modal-res-item"><span>Fecha</span><strong>${r.fecha}</strong></div>
-      <div class="modal-res-item"><span>Hora</span><strong>${r.horaInicio} — ${r.horaFin}</strong></div>
-      <div class="modal-res-item"><span>Duración</span><strong>${r.duracion} min</strong></div>
-      <div class="modal-res-item"><span>Precio</span><strong style="color:var(--gold-lt)">$${(r.precio || 0).toLocaleString('es-CL')}</strong></div>
-      ${r.sesionNum > 1 ? `<div class="modal-res-item"><span>Sesión</span><strong>${r.sesionNum} de ${r.sesionesTotales}</strong></div>` : ''}
+function barChart(data, keyLabel, keyVal) {
+  if (!data || !data.length) return '<p style="color:var(--hint);font-size:12px">Sin datos</p>';
+  const max = Math.max(...data.map(d => d[keyVal]), 1);
+  return data.slice(-14).map(d => `
+    <div class="chart-bar-col">
+      <div class="chart-bar-val">${d[keyVal]}</div>
+      <div class="chart-bar" style="height:${Math.round((d[keyVal]/max)*80)+4}px"></div>
+      <div class="chart-bar-lbl">${String(d[keyLabel]).slice(-5)}</div>
     </div>
-    ${r.notas ? `<div style="background:var(--surface-low);padding:12px;border-radius:8px;font-size:13px;margin-top:12px"><strong style="color:var(--muted)">Notas:</strong> ${r.notas}</div>` : ''}
-    <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
-      ${r.estado !== 'Completada' ? `<button class="btn-success" onclick="completarReserva('${r.id}');cerrarModalDetalle()">✅ Marcar completada</button>` : ''}
-      ${r.estado !== 'Cancelada'  ? `<button class="btn-danger"  onclick="cancelarReservaAdmin('${r.id}');cerrarModalDetalle()">❌ Cancelar</button>` : ''}
-    </div>
-  `;
-  document.getElementById('modal-detalle').classList.add('open');
+  `).join('');
 }
 
-function cerrarModalDetalle() {
-  document.getElementById('modal-detalle').classList.remove('open');
+function badge(estado) {
+  const map = {
+    Confirmada: 'badge-confirmada', Completada: 'badge-completada',
+    Cancelada: 'badge-cancelada',  Pendiente:  'badge-pendiente',
+    Pagada: 'badge-pagada',
+    Activa: 'badge-confirmada', Usada: 'badge-completada',
+    Vencida: 'badge-pendiente', Bronce: 'badge-pendiente',
+  };
+  return `<span class="badge ${map[estado]||''}">${esc(estado)}</span>`;
 }
-document.getElementById('modal-detalle').addEventListener('click', function (e) {
-  if (e.target === this) cerrarModalDetalle();
-});
+
+function esc(str) {
+  if (str == null) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
 
 // ── EXPORTAR CSV ──────────────────────────────────────────────
 function exportarCSV() {
-  const reservas = dashState.data?.reservasHoy || [];
-  if (!reservas.length) { mostrarError('No hay datos para exportar.'); return; }
-  const headers = ['ID', 'Nombre', 'Email', 'Teléfono', 'Servicio', 'Especialista', 'Fecha', 'Hora Inicio', 'Hora Fin', 'Estado', 'Precio'];
-  const rows    = reservas.map(r => [
-    r.id, r.nombre, r.email, r.telefono || '',
-    r.servicioNombre, r.empleadoNombre, r.fecha, r.horaInicio, r.horaFin, r.estado, r.precio,
+  const list = S.data?.reservasHoy || S.reservas || [];
+  if (!list.length) { toast('No hay datos para exportar', 'error'); return; }
+  const headers = ['ID','Nombre','Email','Teléfono','Servicio','Especialista','Fecha','Hora Inicio','Hora Fin','Estado','Precio','Notas'];
+  const rows    = list.map(r => [
+    r.id, r.nombre, r.email, r.telefono||'',
+    r.servicioNombre, r.empleadoNombre, r.fecha, r.horaInicio, r.horaFin,
+    r.estado, r.precio, (r.notas||'').replace(/,/g,';'),
   ]);
-  const csv  = [headers, ...rows].map(r => r.join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const csv  = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
   const a    = document.createElement('a');
   a.href     = URL.createObjectURL(blob);
-  a.download = `reservas_${dashState.fechaActual}.csv`;
+  a.download = `reservas_${S.fecha}.csv`;
   a.click();
 }
 
-// ── SECCIONES ─────────────────────────────────────────────────
-function mostrarSeccion(sec) {
-  document.getElementById(sec === 'agenda' ? 'seccion-agenda' : 'seccion-reservas')
-    ?.scrollIntoView({ behavior: 'smooth' });
+// ── MODAL ─────────────────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+
+// ── LOADER ────────────────────────────────────────────────────
+function loader(show, msg) {
+  const el = document.getElementById('page-loader');
+  el.classList.toggle('hidden', !show);
+  if (msg) document.getElementById('loader-msg').textContent = msg;
 }
 
-// ── HELPERS ───────────────────────────────────────────────────
-function mostrarLoader(show, txt) {
-  const el = document.getElementById('loader');
-  el.style.display = show ? 'flex' : 'none';
-  const txtEl = document.getElementById('loader-txt');
-  if (txtEl && txt) txtEl.textContent = txt;
+// ── TOAST ─────────────────────────────────────────────────────
+let _toastTimer;
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className   = `toast ${type} show`;
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
 }
 
-function mostrarError(msg) {
-  const el = document.getElementById('toast-error');
-  el.textContent = '❌ ' + msg;
-  el.style.background = 'var(--danger)';
-  el.classList.add('visible');
-  setTimeout(() => el.classList.remove('visible'), 4000);
+// ── AUTH CHECK ────────────────────────────────────────────────
+function authCheck(res) {
+  if (res && res.error === 'No autorizado') window.location.href = '/admin/login.html';
 }
 
-function mostrarExito(msg) {
-  const el = document.getElementById('toast-error');
-  el.textContent = '✅ ' + msg;
-  el.style.background = 'var(--success)';
-  el.classList.add('visible');
-  setTimeout(() => el.classList.remove('visible'), 3000);
+// ── SESIÓN ────────────────────────────────────────────────────
+async function cerrarSesion() {
+  try { await API.adminLogout(); } catch {}
+  window.location.href = '/admin/login.html';
 }
 
-function _hoyStr() {
+// ── HELPERS FECHA ─────────────────────────────────────────────
+function hoyStr() {
   const h = new Date();
   return h.getFullYear() + '-' +
-    String(h.getMonth() + 1).padStart(2, '0') + '-' +
-    String(h.getDate()).padStart(2, '0');
+    String(h.getMonth()+1).padStart(2,'0') + '-' +
+    String(h.getDate()).padStart(2,'0');
 }
 
-function _formatFechaLarga(str) {
+function fmtFechaLarga(str) {
   if (!str) return '';
-  const dias  = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-  const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-                 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  const dias  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   const f = new Date(str + 'T12:00:00');
-  return dias[f.getDay()] + ', ' + f.getDate() + ' de ' + meses[f.getMonth()] + ' ' + f.getFullYear();
+  return `${dias[f.getDay()]}, ${f.getDate()} de ${meses[f.getMonth()]} ${f.getFullYear()}`;
 }
 </script>
 </body>
