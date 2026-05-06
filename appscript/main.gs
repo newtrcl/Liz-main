@@ -13,7 +13,7 @@ function doPost(e) {
       case "crearReserva":
         return _handleCrearReserva(body.payload || body);
       case "cancelarReserva":
-        return _handleCancelarReserva(body.reservaID, body.canceladoPor || "cliente");
+        return _handleCancelarReserva(body.reservaID, body.canceladoPor || "cliente", body.payload);
       case "actualizarEstado":
         var p = body.params || body;
         return _handleActualizarEstado(p.reservaID, p.estado);
@@ -50,11 +50,11 @@ function _handleCrearReserva(payload) {
   }
 }
 
-function _handleCancelarReserva(reservaID, canceladoPor) {
+function _handleCancelarReserva(reservaID, canceladoPor, payload) {
   try {
-    var reserva = _getReservaDeSheet(reservaID);
+    var reserva = payload || _getReservaDeSheet(reservaID);
     if (reserva) {
-      enviarCancelacion(reserva);
+      enviarCancelacion(reserva, canceladoPor);
       notificarAdmin(reserva, "cancelada");
       notificarSlack(reserva, "cancelada");
       _marcarCanceladaEnSheet(reservaID, canceladoPor);

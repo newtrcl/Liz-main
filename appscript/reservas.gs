@@ -155,11 +155,15 @@ function enviarConfirmacion(p) {
   } catch(e) { log("ERROR","enviarConfirmacion",p.reservaID||"",p.email,{},e.message); }
 }
 
-function enviarCancelacion(p) {
+function enviarCancelacion(p, canceladoPor) {
   if (!p.email) return;
+  var esSistemaPago = (canceladoPor === "sistema-pago");
+  var msgPrincipal = esSistemaPago
+    ? "Lamentamos informarte que tu reserva fue cancelada automáticamente porque no recibimos confirmación de pago dentro del plazo de 2 horas. El cupo ha sido liberado. Disculpa los inconvenientes."
+    : "Tu reserva ha sido cancelada exitosamente. Esperamos verte pronto.";
   var cuerpo =
     "<p style='font-size:15px;color:#374151;margin:0 0 8px'>Hola, <strong>" + _esc(p.nombre) + "</strong>.</p>" +
-    "<p style='font-size:14px;color:#6b7280;line-height:1.6;margin:0 0 16px'>Tu reserva ha sido cancelada exitosamente. Esperamos verte pronto.</p>" +
+    "<p style='font-size:14px;color:#6b7280;line-height:1.6;margin:0 0 16px'>" + msgPrincipal + "</p>" +
     "<table cellpadding='0' cellspacing='0' border='0'><tr>" +
       "<td style='background:#fff7ed;border:1.5px solid #fed7aa;border-radius:8px;padding:8px 14px;'>" +
         "<span style='font-size:13px;font-weight:700;color:#ea580c;'>❌ &nbsp;Reserva " + _esc(p.reservaID||"") + " cancelada</span>" +

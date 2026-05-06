@@ -2,6 +2,8 @@
    Belleza Integral — js/app.js
    ================================================================ */
 
+const _sessionToken = Math.random().toString(36).slice(2) + Date.now().toString(36);
+
 const state = {
   servicios:     [],
   empleados:     [],
@@ -9,6 +11,7 @@ const state = {
   slotSel:       null,
   fechaSel:      null,
   disponibilidad: {},
+  bloqueoID:     null,
 };
 
 // ── SANITIZACIÓN ──────────────────────────────────────────────
@@ -217,12 +220,26 @@ function escucharEventos() {
     else mostrarError('Selecciona un servicio primero.');
   });
 
-  document.addEventListener('slotSeleccionado', e => {
+  document.addEventListener('slotSeleccionado', async e => {
     const { empleadoID, empleadoNombre, horaInicio, horaFin } = e.detail;
-    state.slotSel     = { empleadoID, empleadoNombre, horaInicio, horaFin };
-    filtroEmpActivo   = empleadoID;
+
+    // Liberar bloqueo anterior si quedó pendiente
+    if (state.bloqueoID) {
+      API.liberarBloqueo(state.bloqueoID).catch(() => {});
+      state.bloqueoID = null;
+    }
+
+    state.slotSel   = { empleadoID, empleadoNombre, horaInicio, horaFin };
+    filtroEmpActivo = empleadoID;
     actualizarResumen();
+    if (typeof playSound === 'function') playSound('snd-select');
     abrirModalReserva();
+
+    // Bloquear slot en segundo plano (no bloquea la UI)
+    try {
+      const r = await API.bloquearSlot(empleadoID, state.fechaSel, horaInicio, horaFin, _sessionToken);
+      if (r?.ok) state.bloqueoID = r.id;
+    } catch (_) {}
   });
 }
 
@@ -307,6 +324,10 @@ function abrirModalReserva() {
 
 function cerrarModal() {
   document.getElementById('modal-reserva').classList.remove('open');
+  if (state.bloqueoID) {
+    API.liberarBloqueo(state.bloqueoID).catch(() => {});
+    state.bloqueoID = null;
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -348,6 +369,7 @@ async function confirmarReserva() {
     horaInicio: state.slotSel.horaInicio,
     notas,
     sesionNum:  parseInt(sesion),
+    bloqueoID:  state.bloqueoID || undefined,
   };
 
   mostrarLoader(true, 'Confirmando tu reserva…');
@@ -356,9 +378,11 @@ async function confirmarReserva() {
     mostrarLoader(false);
 
     if (res.ok) {
+      state.bloqueoID = null; // Limpiar antes de cerrar modal (evita liberar el bloqueo ya reemplazado)
       cerrarModal();
       mostrarConfirmacion(res.reservaID, res.reserva);
-      cargarDisponibilidad(); // Bloquear slot
+      if (typeof playSound === 'function') playSound('snd-confirm');
+      cargarDisponibilidad();
     } else {
       mostrarError(res.error || 'Error al crear la reserva. Intenta de nuevo.');
     }
@@ -383,6 +407,22 @@ function mostrarConfirmacion(reservaID, reserva) {
   document.getElementById('conf-barbero').textContent = reserva?.empleadoNombre || '';
   document.getElementById('conf-fecha').textContent   = _formatFecha(reserva?.fecha) || '';
   document.getElementById('conf-hora').textContent    = reserva?.horaInicio || '';
+
+  // Botón WhatsApp con mensaje pre-llenado
+  const waBtn = document.getElementById('conf-wa-btn');
+  if (waBtn) {
+    const fechaFmt  = _formatFecha(reserva?.fecha) || reserva?.fecha || '';
+    const srvNombre = reserva?.servicioNombre || 'mi servicio';
+    const hora      = reserva?.horaInicio || '';
+    const waMsg = encodeURIComponent(
+      `Hola! Acabo de reservar en *Belleza Integral*.\n` +
+      `🔖 N° de reserva: *${reservaID}*\n` +
+      `✨ Servicio: *${srvNombre}*\n` +
+      `📅 Fecha: *${fechaFmt}* a las *${hora}*\n\n` +
+      `Adjunto mi comprobante de pago.`
+    );
+    waBtn.href = `https://wa.me/56964364128?text=${waMsg}`;
+  }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }

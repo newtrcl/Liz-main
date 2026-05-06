@@ -16,6 +16,10 @@ binding   = "ASSETS"
 [vars]
 SUPABASE_URL = "https://dkryjxgjqmikrhusxsau.supabase.co"
 
+# ── Cron: auto-cancelar reservas sin pago cada 30 min ────────
+[triggers]
+crons = ["*/30 * * * *"]
+
 # ── KV para rate-limiting (opcional) ─────────────────────────
 # 1. Crea el namespace: wrangler kv namespace create RATE_KV
 # 2. Descomenta y reemplaza el ID:

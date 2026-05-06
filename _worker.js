@@ -66,7 +66,17 @@ function minAHora(min) {
 }
 
 function hoyISO() {
-  return new Date().toISOString().split('T')[0];
+  return new Intl.DateTimeFormat('sv', { timeZone: 'America/Santiago' }).format(new Date());
+}
+
+function minutosAhoraEnSantiago() {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Santiago',
+    hour: 'numeric', minute: 'numeric', hour12: false,
+  }).formatToParts(new Date());
+  const h = parseInt(parts.find(p => p.type === 'hour')?.value   || '0');
+  const m = parseInt(parts.find(p => p.type === 'minute')?.value || '0');
+  return h * 60 + m;
 }
 
 // Mapea snake_case Supabase → camelCase frontend
@@ -180,11 +190,8 @@ async function checkRateLimit(env, key, maxReq, windowMs) {
 
 function generarSlots(ocupados, duracion, fecha) {
   const slots  = [];
-  const ahora  = new Date();
-  const esHoy  = fecha === hoyISO();
-  const minAhora = esHoy
-    ? (ahora.getHours() * 60 + ahora.getMinutes() + 30)  // margen 30 min
-    : -1;
+  const esHoy    = fecha === hoyISO();
+  const minAhora = esHoy ? (minutosAhoraEnSantiago() + 30) : -1;
 
   for (let h = 9; h < 20; h++) {
     for (let m = 0; m < 60; m += 30) {
@@ -867,6 +874,35 @@ async function handleAdminFidelizacion(env, cors, url) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// CRON — AUTO-CANCELAR RESERVAS SIN PAGO
+// ═══════════════════════════════════════════════════════════════
+
+async function handleAutoCancelarReservas(env) {
+  // Cancela reservas que llevan más de 2 horas en estado 'Confirmada' sin pago
+  const cutoff = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+  const r = await supaFetch(env,
+    `reservas?estado=eq.Confirmada&created_at=lt.${encodeURIComponent(cutoff)}&select=*`
+  );
+  if (!r.ok || !Array.isArray(r.data) || r.data.length === 0) return;
+
+  for (const reserva of r.data) {
+    const upd = await supaFetch(env, `reservas?id=eq.${encodeURIComponent(reserva.id)}`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({ estado: 'Cancelada', cancelado_por: 'sistema-pago' }),
+    });
+    if (upd.ok) {
+      await notificarGAS(env, 'cancelarReserva', {
+        reservaID: reserva.id,
+        canceladoPor: 'sistema-pago',
+        payload: formatReservaGAS(reserva),
+      });
+      console.log(`[cron] Auto-cancelada por falta de pago: ${reserva.id}`);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // MAIN FETCH HANDLER
 // ═══════════════════════════════════════════════════════════════
 
@@ -969,5 +1005,9 @@ export default {
     }
 
     return env.ASSETS.fetch(request);
+  },
+
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(handleAutoCancelarReservas(env));
   },
 };
