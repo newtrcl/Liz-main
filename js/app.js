@@ -369,7 +369,8 @@ async function confirmarReserva() {
     horaInicio: state.slotSel.horaInicio,
     notas,
     sesionNum:  parseInt(sesion),
-    bloqueoID:  state.bloqueoID || undefined,
+    bloqueoID:    state.bloqueoID  || undefined,
+    sessionToken: _sessionToken,
   };
 
   mostrarLoader(true, 'Confirmando tu reserva…');

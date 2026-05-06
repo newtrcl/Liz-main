@@ -406,8 +406,9 @@ async function handleCrearReserva(env, cors, request, ctx) {
   const fecha      = p.fecha      || '';
   const horaInicio = p.horaInicio || '';
   const sesionNum  = parseInt(p.sesionNum) || 1;
-  const bloqueoID  = sanitizar(p.bloqueoID  || '', 100);
-  const gcCodigo   = sanitizar(p.giftcardCodigo || '', 50);
+  const bloqueoID    = sanitizar(p.bloqueoID    || '', 100);
+  const sessionToken = sanitizar(p.sessionToken || '', 100);
+  const gcCodigo     = sanitizar(p.giftcardCodigo || '', 50);
 
   if (!nombre || nombre.length < 2)
     return json({ ok: false, error: 'Nombre inválido' }, 400, cors);
@@ -456,7 +457,10 @@ async function handleCrearReserva(env, cors, request, ctx) {
       `reservas?fecha=eq.${fecha}&empleado_id=eq.${encodeURIComponent(empleadoID)}&estado=neq.Cancelada&select=hora_inicio,hora_fin`
     ),
     supaFetch(env,
-      `bloqueos?fecha=eq.${fecha}&empleado_id=eq.${encodeURIComponent(empleadoID)}&expires_at=gt.${new Date().toISOString()}&id=neq.${encodeURIComponent(bloqueoID || 'none')}&select=hora_inicio,hora_fin`
+      `bloqueos?fecha=eq.${fecha}&empleado_id=eq.${encodeURIComponent(empleadoID)}&expires_at=gt.${encodeURIComponent(new Date().toISOString())}` +
+      (bloqueoID    ? `&id=neq.${encodeURIComponent(bloqueoID)}`               : '') +
+      (sessionToken ? `&session_token=neq.${encodeURIComponent(sessionToken)}` : '') +
+      `&select=hora_inicio,hora_fin`
     ),
   ]);
 
