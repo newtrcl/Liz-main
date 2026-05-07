@@ -187,6 +187,10 @@ async function cargarDisponibilidad() {
     const data = await API.getDisponibilidad(state.fechaSel, state.servicioSel.id);
     state.disponibilidad = (data && data.empleados) ? data.empleados : {};
     renderSlotsActuales();
+    // Scroll automático al paso 3 para que el usuario vea los slots
+    setTimeout(() => {
+      document.getElementById('paso-hora')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
   } catch (e) {
     mostrarError('Error al cargar disponibilidad.');
     state.disponibilidad = {};
