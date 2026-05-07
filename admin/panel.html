@@ -1022,12 +1022,13 @@ function exportarPDF() {
   <table><thead><tr><th>Fecha</th><th>Reservas</th></tr></thead><tbody>
     ${(data.porFecha||[]).map(f=>`<tr><td>${f.fecha}</td><td>${f.total}</td></tr>`).join('')||'<tr><td colspan="2">Sin datos</td></tr>'}
   </tbody></table>
-  <script>window.onload=function(){window.print();}</script>
   </body></html>`;
 
   const w = window.open('', '_blank', 'width=900,height=700');
   w.document.write(html);
   w.document.close();
+  w.focus();
+  setTimeout(() => w.print(), 600);
 }
 
 // ── GIFT CARDS ────────────────────────────────────────────────
