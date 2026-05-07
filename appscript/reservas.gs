@@ -234,6 +234,38 @@ function notificarAdmin(p, tipo) {
 // SLACK
 // ═══════════════════════════════════════════════════════════════
 
+// [AUDIT:giftcard-email] Email de gift card al destinatario con código, monto y mensaje del remitente
+function enviarGiftCard(p) {
+  var monto     = parseFloat(p.monto || 0).toLocaleString("es-CL");
+  var vence     = p.fechaVencimiento ? "Válida hasta el " + _fmtFecha(p.fechaVencimiento) : "Sin fecha de vencimiento";
+  var mensaje   = p.mensaje ? "<p style='font-family:Helvetica,Arial,sans-serif;font-size:14px;color:#374151;margin:0 0 20px;font-style:italic'>\"" + _esc(p.mensaje) + "\"</p>" : "";
+  var remitente = p.remitente ? " de parte de <strong>" + _esc(p.remitente) + "</strong>" : "";
+
+  var html = _xhtmlEnvelope(
+    "🎁 ¡Tienes una Gift Card!",
+    "<p style='font-family:Helvetica,Arial,sans-serif;font-size:15px;color:#374151;margin:0 0 8px'>Hola, <strong>" + _esc(p.destinatarioNombre || "cliente") + "</strong>.</p>" +
+    "<p style='font-family:Helvetica,Arial,sans-serif;font-size:14px;color:#6b7280;margin:0 0 20px'>Has recibido una <strong>Gift Card" + remitente + "</strong> para usar en " + _esc(NEGOCIO_NOMBRE) + ".</p>" +
+    mensaje +
+    _detalleTabla([
+      ["Código",  p.codigo || ""],
+      ["Monto",   "$" + monto + " CLP"],
+      ["Validez", vence],
+    ]) +
+    "<p style='font-family:Helvetica,Arial,sans-serif;font-size:13px;color:#6b7280;margin:20px 0 0'>Presenta este código al agendar tu cita o mencíonalo al momento del pago.</p>",
+    "#b8952a"
+  );
+
+  try {
+    MailApp.sendEmail({
+      to:       p.destinatarioEmail,
+      subject:  "🎁 Tu Gift Card de " + NEGOCIO_NOMBRE + " — Código: " + (p.codigo || ""),
+      htmlBody: html,
+      name:     NEGOCIO_NOMBRE,
+      replyTo:  NEGOCIO_EMAIL,
+    });
+  } catch(e) { log("ERROR", "enviarGiftCard", p.codigo || "", p.destinatarioEmail, {}, e.message); }
+}
+
 function notificarSlack(p, tipo) {
   if (!SLACK_WEBHOOK_URL) return;
   try {

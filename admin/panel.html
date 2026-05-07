@@ -392,7 +392,7 @@ textarea.form-ctrl { height: 72px; padding: 8px 10px; resize: vertical; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── QR MODAL ────────────────────────────────────────────────── */
-#qr-canvas { display: block; margin: 0 auto; }
+#qr-container img { display: block; margin: 0 auto; }
 
 /* ── RESPONSIVE ──────────────────────────────────────────────── */
 @media (max-width: 768px) {
@@ -569,7 +569,7 @@ textarea.form-ctrl { height: 72px; padding: 8px 10px; resize: vertical; }
       <button class="modal-close-btn" onclick="closeModal('modal-qr')">✕</button>
     </div>
     <div class="modal-content" style="text-align:center">
-      <canvas id="qr-canvas" width="220" height="220"></canvas>
+      <div id="qr-container" style="width:220px;height:220px;margin:0 auto;display:flex;align-items:center;justify-content:center"></div>
       <p style="margin-top:12px;font-size:13px;color:var(--muted)" id="qr-info"></p>
     </div>
     <div class="modal-foot">
@@ -581,6 +581,7 @@ textarea.form-ctrl { height: 72px; padding: 8px 10px; resize: vertical; }
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="../js/api.js"></script>
 <script>
 /* ================================================================
@@ -810,6 +811,7 @@ async function cambiarFechaReservas(fecha) {
 }
 
 // ── REPORTES ─────────────────────────────────────────────────
+// [AUDIT:reportes] Carga, renderiza y permite exportar reportes por rango de fechas
 async function renderReportes() {
   const hoy   = hoyStr();
   const desde = hoy.slice(0, 7) + '-01';
@@ -820,21 +822,32 @@ async function renderReportes() {
 
   const c = document.getElementById('main-content');
   c.innerHTML = `
-    <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px">
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:20px">
       <label style="font-size:13px;color:var(--muted)">Desde</label>
       <input type="date" class="filter-input" id="rep-desde" value="${desde}">
       <label style="font-size:13px;color:var(--muted)">Hasta</label>
       <input type="date" class="filter-input" id="rep-hasta" value="${hoy}">
       <button class="btn btn-primary btn-sm" onclick="cargarReportes()">Ver</button>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn btn-ghost btn-sm" onclick="_repHoy()">Hoy</button>
+        <button class="btn btn-ghost btn-sm" onclick="_repSemana()">Esta semana</button>
+        <button class="btn btn-ghost btn-sm" onclick="_repMes()">Este mes</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportarPDF()">
+          <span class="material-symbols-outlined" style="font-size:15px">picture_as_pdf</span> PDF
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="exportarExcel()">
+          <span class="material-symbols-outlined" style="font-size:15px">table_view</span> Excel
+        </button>
+      </div>
     </div>
 
-    <div class="stats-row" style="margin-bottom:20px">
+    <div class="stats-row" style="margin-bottom:20px" id="rep-stats">
       <div class="stat-box stat-box--gold">
-        <div class="stat-val">${data.totales.reservas}</div>
+        <div class="stat-val" id="rep-total-reservas">${data.totales.reservas}</div>
         <div class="stat-lbl">Total reservas</div>
       </div>
       <div class="stat-box stat-box--green">
-        <div class="stat-val" style="font-size:16px">$${(data.totales.ingreso||0).toLocaleString('es-CL')}</div>
+        <div class="stat-val" id="rep-total-ingreso" style="font-size:16px">$${(data.totales.ingreso||0).toLocaleString('es-CL')}</div>
         <div class="stat-lbl">Ingreso total</div>
       </div>
     </div>
@@ -849,16 +862,10 @@ async function renderReportes() {
       <div class="card">
         <div class="card-header"><span class="card-title">💇 Por servicio</span></div>
         <div class="card-body" style="padding:0">
-          <table class="tbl">
+          <table class="tbl" id="rep-tbl-servicio">
             <thead><tr><th>Servicio</th><th>Reservas</th><th>Ingreso</th></tr></thead>
-            <tbody>
-              ${data.porServicio.map(s => `
-                <tr>
-                  <td>${esc(s.nombre)}</td>
-                  <td style="font-weight:700">${s.total}</td>
-                  <td style="color:var(--gold)">$${(s.ingreso||0).toLocaleString('es-CL')}</td>
-                </tr>
-              `).join('') || '<tr><td colspan="3" class="tbl-empty">Sin datos</td></tr>'}
+            <tbody id="rep-tbody-servicio">
+              ${_repFilasServicio(data.porServicio)}
             </tbody>
           </table>
         </div>
@@ -866,22 +873,56 @@ async function renderReportes() {
       <div class="card">
         <div class="card-header"><span class="card-title">👩 Por especialista</span></div>
         <div class="card-body" style="padding:0">
-          <table class="tbl">
+          <table class="tbl" id="rep-tbl-empleado">
             <thead><tr><th>Especialista</th><th>Reservas</th><th>Ingreso</th></tr></thead>
-            <tbody>
-              ${data.porEmpleado.map(e => `
-                <tr>
-                  <td>${esc(e.nombre)}</td>
-                  <td style="font-weight:700">${e.total}</td>
-                  <td style="color:var(--gold)">$${(e.ingreso||0).toLocaleString('es-CL')}</td>
-                </tr>
-              `).join('') || '<tr><td colspan="3" class="tbl-empty">Sin datos</td></tr>'}
+            <tbody id="rep-tbody-empleado">
+              ${_repFilasEmpleado(data.porEmpleado)}
             </tbody>
           </table>
         </div>
       </div>
     </div>
   `;
+  // store last loaded data for exports
+  window._repData = data;
+  window._repDesde = desde;
+  window._repHasta = hoy;
+}
+
+function _repFilasServicio(rows) {
+  return rows.map(s => `<tr>
+    <td>${esc(s.nombre)}</td>
+    <td style="font-weight:700">${s.total}</td>
+    <td style="color:var(--gold)">$${(s.ingreso||0).toLocaleString('es-CL')}</td>
+  </tr>`).join('') || '<tr><td colspan="3" class="tbl-empty">Sin datos</td></tr>';
+}
+function _repFilasEmpleado(rows) {
+  return rows.map(e => `<tr>
+    <td>${esc(e.nombre)}</td>
+    <td style="font-weight:700">${e.total}</td>
+    <td style="color:var(--gold)">$${(e.ingreso||0).toLocaleString('es-CL')}</td>
+  </tr>`).join('') || '<tr><td colspan="3" class="tbl-empty">Sin datos</td></tr>';
+}
+
+function _repHoy() {
+  const hoy = hoyStr();
+  document.getElementById('rep-desde').value = hoy;
+  document.getElementById('rep-hasta').value = hoy;
+  cargarReportes();
+}
+function _repSemana() {
+  const d = new Date();
+  const day = d.getDay() || 7;
+  const lunes = new Date(d); lunes.setDate(d.getDate() - day + 1);
+  document.getElementById('rep-desde').value = lunes.toISOString().slice(0,10);
+  document.getElementById('rep-hasta').value = hoyStr();
+  cargarReportes();
+}
+function _repMes() {
+  const hoy = hoyStr();
+  document.getElementById('rep-desde').value = hoy.slice(0,7) + '-01';
+  document.getElementById('rep-hasta').value = hoy;
+  cargarReportes();
 }
 
 async function cargarReportes() {
@@ -891,7 +932,102 @@ async function cargarReportes() {
   const data = await API.getReportes(desde, hasta);
   loader(false);
   if (!data.ok) return;
-  document.getElementById('chart-fecha').innerHTML = barChart(data.porFecha, 'fecha', 'total');
+  document.getElementById('chart-fecha').innerHTML        = barChart(data.porFecha, 'fecha', 'total');
+  document.getElementById('rep-tbody-servicio').innerHTML = _repFilasServicio(data.porServicio);
+  document.getElementById('rep-tbody-empleado').innerHTML = _repFilasEmpleado(data.porEmpleado);
+  document.getElementById('rep-total-reservas').textContent = data.totales.reservas;
+  document.getElementById('rep-total-ingreso').textContent  = `$${(data.totales.ingreso||0).toLocaleString('es-CL')}`;
+  window._repData  = data;
+  window._repDesde = desde;
+  window._repHasta = hasta;
+}
+
+// [AUDIT:reportes-exportar] Exporta los datos de reportes a Excel (CSV) o PDF (ventana de impresión)
+function exportarExcel() {
+  const data  = window._repData;
+  const desde = window._repDesde || '';
+  const hasta = window._repHasta || '';
+  if (!data) { toast('Carga un reporte primero', 'warning'); return; }
+
+  const BOM = '﻿';
+  let csv = BOM;
+
+  csv += `Reporte Belleza Integral;${desde} al ${hasta}\r\n\r\n`;
+  csv += `Totales\r\n`;
+  csv += `Total reservas;${data.totales.reservas}\r\n`;
+  csv += `Ingreso total;${data.totales.ingreso||0}\r\n\r\n`;
+
+  csv += `Por Servicio\r\nServicio;Reservas;Ingreso\r\n`;
+  (data.porServicio || []).forEach(s => {
+    csv += `${s.nombre};${s.total};${s.ingreso||0}\r\n`;
+  });
+  csv += `\r\nPor Especialista\r\nEspecialista;Reservas;Ingreso\r\n`;
+  (data.porEmpleado || []).forEach(e => {
+    csv += `${e.nombre};${e.total};${e.ingreso||0}\r\n`;
+  });
+  csv += `\r\nPor Día\r\nFecha;Reservas\r\n`;
+  (data.porFecha || []).forEach(f => {
+    csv += `${f.fecha};${f.total}\r\n`;
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `reporte_${desde}_${hasta}.csv`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+function exportarPDF() {
+  const data  = window._repData;
+  const desde = window._repDesde || '';
+  const hasta = window._repHasta || '';
+  if (!data) { toast('Carga un reporte primero', 'warning'); return; }
+
+  const fmtPesos = n => `$${parseFloat(n||0).toLocaleString('es-CL')}`;
+  const filas = (arr, cols) => arr.map(r => `<tr>${cols.map(c => `<td>${r[c]??''}</td>`).join('')}</tr>`).join('') || '<tr><td colspan="99">Sin datos</td></tr>';
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Reporte ${desde} – ${hasta}</title>
+  <style>
+    body{font-family:sans-serif;font-size:12px;color:#111;padding:24px}
+    h1{font-size:18px;margin-bottom:4px}
+    p{color:#6b7280;margin-bottom:20px}
+    h2{font-size:14px;margin:20px 0 8px;border-bottom:1px solid #e5e7eb;padding-bottom:4px}
+    table{width:100%;border-collapse:collapse;margin-bottom:16px}
+    th{background:#1e1b2e;color:#fff;text-align:left;padding:6px 10px;font-size:11px}
+    td{padding:5px 10px;border-bottom:1px solid #f3f4f6}
+    .summary{display:flex;gap:24px;margin-bottom:20px}
+    .box{background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:12px 20px;text-align:center}
+    .box-val{font-size:22px;font-weight:700;color:#b8952a}
+    .box-lbl{font-size:11px;color:#6b7280;margin-top:2px}
+    @media print{button{display:none}}
+  </style></head><body>
+  <h1>Reporte Belleza Integral</h1>
+  <p>Período: ${desde} al ${hasta}</p>
+  <div class="summary">
+    <div class="box"><div class="box-val">${data.totales.reservas}</div><div class="box-lbl">Total reservas</div></div>
+    <div class="box"><div class="box-val">${fmtPesos(data.totales.ingreso)}</div><div class="box-lbl">Ingreso total</div></div>
+  </div>
+  <h2>Por Servicio</h2>
+  <table><thead><tr><th>Servicio</th><th>Reservas</th><th>Ingreso</th></tr></thead><tbody>
+    ${(data.porServicio||[]).map(s=>`<tr><td>${s.nombre}</td><td>${s.total}</td><td>${fmtPesos(s.ingreso)}</td></tr>`).join('')||'<tr><td colspan="3">Sin datos</td></tr>'}
+  </tbody></table>
+  <h2>Por Especialista</h2>
+  <table><thead><tr><th>Especialista</th><th>Reservas</th><th>Ingreso</th></tr></thead><tbody>
+    ${(data.porEmpleado||[]).map(e=>`<tr><td>${e.nombre}</td><td>${e.total}</td><td>${fmtPesos(e.ingreso)}</td></tr>`).join('')||'<tr><td colspan="3">Sin datos</td></tr>'}
+  </tbody></table>
+  <h2>Por Día</h2>
+  <table><thead><tr><th>Fecha</th><th>Reservas</th></tr></thead><tbody>
+    ${(data.porFecha||[]).map(f=>`<tr><td>${f.fecha}</td><td>${f.total}</td></tr>`).join('')||'<tr><td colspan="2">Sin datos</td></tr>'}
+  </tbody></table>
+  <script>window.onload=function(){window.print();}</script>
+  </body></html>`;
+
+  const w = window.open('', '_blank', 'width=900,height=700');
+  w.document.write(html);
+  w.document.close();
 }
 
 // ── GIFT CARDS ────────────────────────────────────────────────
@@ -1013,33 +1149,44 @@ async function buscarFidelizacion(q) {
 }
 
 // ── QR FIDELIZACIÓN ───────────────────────────────────────────
+// [AUDIT:fidelizacion-qr] Genera QR real con qrcodejs apuntando al endpoint de verificación
 function mostrarQR(token, nombre, nivel, puntos) {
   document.getElementById('qr-titulo').textContent = nombre;
   document.getElementById('qr-info').textContent   = `${nivel} · ${puntos} puntos`;
-  const canvas = document.getElementById('qr-canvas');
-  const url    = `${location.origin}/api/fidelizacion/qr/${encodeURIComponent(token)}`;
-  renderQR(canvas, url);
+  const url = `${location.origin}/api/fidelizacion/qr/${encodeURIComponent(token)}`;
+  renderQR(url);
   openModal('modal-qr');
 }
 
-function renderQR(canvas, text) {
-  const size = 220;
-  canvas.width = canvas.height = size;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(0, 0, size, size);
-  // QR simple de texto (placeholder visual — en producción usar librería qrcode.js)
-  ctx.fillStyle = '#1e1b2e';
-  ctx.font = '11px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('Escanear con lector QR', size/2, size/2 - 10);
-  ctx.font = '9px monospace';
-  ctx.fillStyle = '#b8952a';
-  ctx.fillText(text.slice(0, 40), size/2, size/2 + 8);
-  // Para QR real: cargar qrcode.min.js y llamar QRCode(canvas, text)
+function renderQR(text) {
+  const container = document.getElementById('qr-container');
+  container.innerHTML = '';
+  new QRCode(container, {
+    text,
+    width:  220,
+    height: 220,
+    colorDark:  '#1e1b2e',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M,
+  });
 }
 
-function imprimirQR() { window.print(); }
+function imprimirQR() {
+  const container = document.getElementById('qr-container');
+  const img = container.querySelector('img');
+  if (!img) return;
+  const w = window.open('', '_blank', 'width=400,height=500');
+  w.document.write(`<!DOCTYPE html><html><head><title>QR Fidelización</title>
+    <style>body{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;margin:0}
+    h2{margin-bottom:12px;font-size:16px}img{border:1px solid #eee;padding:12px;border-radius:8px}</style></head>
+    <body><h2>${esc(document.getElementById('qr-titulo').textContent)}</h2>
+    <img src="${img.src}" width="220" height="220">
+    <p style="margin-top:10px;font-size:12px;color:#6b7280">${esc(document.getElementById('qr-info').textContent)}</p>
+    </body></html>`);
+  w.document.close();
+  w.focus();
+  setTimeout(() => w.print(), 400);
+}
 
 // ══════════════════════════════════════════════════════════════
 // ACCIONES SOBRE RESERVAS

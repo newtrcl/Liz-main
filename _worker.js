@@ -339,9 +339,14 @@ async function handleBloquearSlot(env, cors, request) {
   if (!empleadoID || !fecha || !horaInicio || !horaFin || !sessionToken)
     return json({ ok: false, error: 'Faltan campos' }, 400, cors);
 
-  // Limpiar bloqueos expirados del mismo empleado/fecha primero
+  // Eliminar bloqueos anteriores de esta sesión (evita acumulación al cambiar de slot)
   await supaFetch(env,
-    `bloqueos?empleado_id=eq.${encodeURIComponent(empleadoID)}&fecha=eq.${fecha}&expires_at=lt.${new Date().toISOString()}`,
+    `bloqueos?empleado_id=eq.${encodeURIComponent(empleadoID)}&fecha=eq.${fecha}&session_token=eq.${encodeURIComponent(sessionToken)}`,
+    { method: 'DELETE' }
+  );
+  // Limpiar bloqueos expirados de otros usuarios también
+  await supaFetch(env,
+    `bloqueos?empleado_id=eq.${encodeURIComponent(empleadoID)}&fecha=eq.${fecha}&expires_at=lt.${encodeURIComponent(new Date().toISOString())}`,
     { method: 'DELETE' }
   );
 
@@ -491,6 +496,13 @@ async function handleCrearReserva(env, cors, request, ctx) {
   if (!insR.ok) {
     console.error('Supabase insert error:', JSON.stringify(insR.data));
     return json({ ok: false, error: 'Error al crear la reserva.' }, 500, cors);
+  }
+
+  // Liberar todos los bloqueos de esta sesión (la reserva ya ocupa el slot)
+  if (sessionToken) {
+    ctx.waitUntil(
+      supaFetch(env, `bloqueos?session_token=eq.${encodeURIComponent(sessionToken)}`, { method: 'DELETE' })
+    );
   }
 
   // Actualizar gift card si se usó
@@ -822,7 +834,7 @@ async function handleAdminReagendar(env, cors, request, ctx) {
 
 // ── ADMIN GIFT CARDS ──────────────────────────────────────────
 
-async function handleAdminCrearGiftCard(env, cors, request) {
+async function handleAdminCrearGiftCard(env, cors, request, ctx) {
   let body;
   try { body = await request.json(); } catch {
     return json({ ok: false, error: 'JSON inválido' }, 400, cors);
@@ -856,6 +868,23 @@ async function handleAdminCrearGiftCard(env, cors, request) {
   });
 
   if (!ins.ok) return json({ ok: false, error: 'Error al crear gift card' }, 500, cors);
+
+  // Notificar GAS para enviar email con la gift card al destinatario
+  const destEmail = sanitizar(body.destinatarioEmail || '', 100).toLowerCase();
+  if (destEmail) {
+    ctx.waitUntil(notificarGAS(env, 'enviarGiftCard', {
+      payload: {
+        codigo, monto,
+        compradorNombre:    sanitizar(body.compradorNombre    || '', 100),
+        compradorEmail:     sanitizar(body.compradorEmail     || '', 100).toLowerCase(),
+        destinatarioNombre: sanitizar(body.destinatarioNombre || '', 100),
+        destinatarioEmail:  destEmail,
+        mensaje:            sanitizar(body.mensaje            || '', 500),
+        fechaVencimiento:   vence || '',
+      },
+    }));
+  }
+
   return json({ ok: true, codigo, id }, 200, cors);
 }
 
@@ -994,7 +1023,7 @@ export default {
         if (method === 'POST' && path === '/api/admin/reservas/reagendar')
           return handleAdminReagendar(env, cors, request, ctx);
         if (method === 'POST' && path === '/api/admin/giftcards')
-          return handleAdminCrearGiftCard(env, cors, request);
+          return handleAdminCrearGiftCard(env, cors, request, ctx);
         if (method === 'GET'  && path === '/api/admin/giftcards')
           return handleAdminListGiftCards(env, cors);
         if (method === 'GET'  && path === '/api/admin/fidelizacion')

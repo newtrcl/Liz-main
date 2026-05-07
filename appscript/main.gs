@@ -19,6 +19,8 @@ function doPost(e) {
         return _handleActualizarEstado(p.reservaID, p.estado);
       case "reagendarReserva":
         return _handleReagendar(body);
+      case "enviarGiftCard":
+        return _handleEnviarGiftCard(body.payload || body);
       default:
         return jsonOut({ ok: false, error: "Acción desconocida: " + accion });
     }
@@ -85,6 +87,19 @@ function _handleReagendar(body) {
     return jsonOut({ ok: true });
   } catch(e) {
     log("ERROR", "reagendarReserva", body.reservaID || "", "", {}, e.message);
+    return jsonOut({ ok: false, error: e.message });
+  }
+}
+
+// [AUDIT:giftcard-email] Envía la tarjeta de regalo al destinatario vía email
+function _handleEnviarGiftCard(payload) {
+  try {
+    if (!payload || !payload.destinatarioEmail) return jsonOut({ ok: false, error: "Sin destinatario" });
+    enviarGiftCard(payload);
+    log("INFO", "enviarGiftCard", payload.codigo || "", payload.destinatarioEmail, {}, "GAS OK");
+    return jsonOut({ ok: true });
+  } catch(e) {
+    log("ERROR", "enviarGiftCard", "", "", {}, e.message);
     return jsonOut({ ok: false, error: e.message });
   }
 }
