@@ -488,7 +488,7 @@ async function handleCrearReserva(env, cors, request, ctx) {
     fecha, hora_inicio: horaInicio, hora_fin: horaFin,
     duracion: srv.duracion, precio: precioFinal,
     sesion_num: sesionNum, sesiones_totales: srv.max_sesiones || 1,
-    estado: 'Confirmada', notas,
+    estado: 'Pendiente', notas,
     giftcard_codigo: gcCodigo || null,
   };
 
@@ -527,8 +527,8 @@ async function handleCrearReserva(env, cors, request, ctx) {
   // Actualizar / crear perfil de fidelización
   ctx.waitUntil(actualizarFidelizacion(env, { nombre, email, telefono: tel, precio: parseFloat(srv.precio) }));
 
-  // Notificar GAS (email + Calendar + Slack)
-  ctx.waitUntil(notificarGAS(env, 'crearReserva', {
+  // [AUDIT:reserva-flujo] Notificar GAS: enviar email "solicitud recibida" (estado Pendiente, espera de pago)
+  ctx.waitUntil(notificarGAS(env, 'solicitudReserva', {
     payload: {
       reservaID, nombre, email, telefono: tel, notas,
       servicioID, servicioNombre: srv.nombre,
@@ -753,13 +753,32 @@ async function handleAdminActualizarEstado(env, cors, request, ctx) {
   if (!reservaID || !validos.includes(estado))
     return json({ ok: false, error: 'Datos inválidos' }, 400, cors);
 
+  // [AUDIT:pago-confirmacion] Fetch completo si cambio a Pagada para disparar email
+  let reserva = null;
+  if (estado === 'Pagada') {
+    const rFetch = await supaFetch(env, `reservas?id=eq.${encodeURIComponent(reservaID)}&select=*`);
+    if (rFetch.ok && rFetch.data?.length) reserva = rFetch.data[0];
+  }
+
   const r = await supaFetch(env, `reservas?id=eq.${encodeURIComponent(reservaID)}`, {
     method: 'PATCH',
     body:   JSON.stringify({ estado }),
   });
   if (!r.ok) return json({ ok: false, error: 'Error al actualizar' }, 500, cors);
 
-  ctx.waitUntil(notificarGAS(env, 'actualizarEstado', { params: { reservaID, estado } }));
+  // Si cambió a Pagada, disparar email "Reserva Confirmada"
+  if (estado === 'Pagada' && reserva) {
+    ctx.waitUntil(notificarGAS(env, 'confirmarPago', {
+      payload: {
+        reservaID, nombre: reserva.nombre, email: reserva.email, telefono: reserva.telefono,
+        servicioNombre: reserva.servicio_nombre, empleadoNombre: reserva.empleado_nombre,
+        fecha: reserva.fecha, horaInicio: reserva.hora_inicio, horaFin: reserva.hora_fin,
+        precio: reserva.precio,
+      },
+    }));
+  } else {
+    ctx.waitUntil(notificarGAS(env, 'actualizarEstado', { params: { reservaID, estado } }));
+  }
   return json({ ok: true }, 200, cors);
 }
 
@@ -907,14 +926,15 @@ async function handleAdminFidelizacion(env, cors, url) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// CRON — AUTO-CANCELAR RESERVAS SIN PAGO
+// CRON — AUTO-CANCELAR RESERVAS SIN PAGO (Pendiente > 2h)
 // ═══════════════════════════════════════════════════════════════
 
+// [AUDIT:cancelacion-auto] Cron cada 30min: busca Pendiente > 2h sin pago, cancela, libera cupo, notifica
 async function handleAutoCancelarReservas(env) {
-  // Cancela reservas que llevan más de 2 horas en estado 'Confirmada' sin pago
+  // Cancela reservas que llevan más de 2 horas en estado 'Pendiente' sin pago confirmado
   const cutoff = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
   const r = await supaFetch(env,
-    `reservas?estado=eq.Confirmada&created_at=lt.${encodeURIComponent(cutoff)}&select=*`
+    `reservas?estado=eq.Pendiente&created_at=lt.${encodeURIComponent(cutoff)}&select=*`
   );
   if (!r.ok || !Array.isArray(r.data) || r.data.length === 0) return;
 

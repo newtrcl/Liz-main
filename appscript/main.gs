@@ -10,8 +10,10 @@ function doPost(e) {
     var accion = body.accion || "";
 
     switch (accion) {
-      case "crearReserva":
-        return _handleCrearReserva(body.payload || body);
+      case "solicitudReserva":
+        return _handleSolicitudReserva(body.payload || body);
+      case "confirmarPago":
+        return _handleConfirmarPago(body.payload || body);
       case "cancelarReserva":
         return _handleCancelarReserva(body.reservaID, body.canceladoPor || "cliente", body.payload);
       case "actualizarEstado":
@@ -36,7 +38,8 @@ function doGet(e) {
 
 // ── HANDLERS ─────────────────────────────────────────────────
 
-function _handleCrearReserva(payload) {
+// [AUDIT:handler-solicitud] Recibe nueva solicitud: email "espera pago", crea evento pending en calendar
+function _handleSolicitudReserva(payload) {
   if (!payload || !payload.email) return jsonOut({ ok: false, error: "Payload vacío" });
   try {
     _logReservaEnSheet(payload);
@@ -44,10 +47,25 @@ function _handleCrearReserva(payload) {
     enviarConfirmacion(payload);
     notificarAdmin(payload, "nueva");
     notificarSlack(payload, "nueva");
-    log("INFO", "crearReserva", payload.reservaID || "", payload.nombre, {}, "GAS OK");
+    log("INFO", "solicitudReserva", payload.reservaID || "", payload.nombre, {}, "GAS OK");
     return jsonOut({ ok: true });
   } catch(e) {
-    log("ERROR", "crearReserva", payload.reservaID || "", payload.nombre || "", {}, e.message);
+    log("ERROR", "solicitudReserva", payload.reservaID || "", payload.nombre || "", {}, e.message);
+    return jsonOut({ ok: false, error: e.message });
+  }
+}
+
+// [AUDIT:handler-pago] Recibe confirmación de pago: email "Reserva Confirmada", actualiza calendar
+function _handleConfirmarPago(payload) {
+  if (!payload || !payload.email) return jsonOut({ ok: false, error: "Payload vacío" });
+  try {
+    enviarReservaConfirmada(payload);
+    notificarAdmin(payload, "pagada");
+    notificarSlack(payload, "pagada");
+    log("INFO", "confirmarPago", payload.reservaID || "", payload.nombre, {}, "GAS OK");
+    return jsonOut({ ok: true });
+  } catch(e) {
+    log("ERROR", "confirmarPago", payload.reservaID || "", payload.nombre || "", {}, e.message);
     return jsonOut({ ok: false, error: e.message });
   }
 }

@@ -124,6 +124,7 @@ function _fmtFecha(fechaStr) {
 // EMAILS AL CLIENTE
 // ═══════════════════════════════════════════════════════════════
 
+// [AUDIT:email-solicitud] Email inicial cuando cliente agenda: "solicitud recibida, espera de pago"
 function enviarConfirmacion(p) {
   if (!p.email) return;
   var precioFmt = "$" + (p.precio||0).toLocaleString("es-CL") + " CLP";
@@ -135,6 +136,37 @@ function enviarConfirmacion(p) {
     ["Precio",      "<strong style='color:" + COLOR_PRIMARY + ";'>" + precioFmt + "</strong>"],
   ];
   if (p.notas) filas.push(["Notas", "<em style='color:#6b7280;'>" + _esc(p.notas) + "</em>"]);
+
+  var cuerpo =
+    "<p style='font-size:15px;color:#374151;margin:0 0 8px'>Hola, <strong>" + _esc(p.nombre) + "</strong> 👋</p>" +
+    "<p style='font-size:14px;color:#6b7280;line-height:1.6;margin:0 0 16px'>Se recibió tu solicitud de reserva. Quedaremos a la espera de la confirmación de tu pago para validar la cita.</p>" +
+    "<table cellpadding='0' cellspacing='0' border='0'><tr>" +
+      "<td style='background:#fef3c7;border:1.5px solid #fcd34d;border-radius:8px;padding:8px 14px;'>" +
+        "<span style='font-size:13px;font-weight:700;color:#d97706;'>⏳ &nbsp;Solicitud " + _esc(p.reservaID||"") + "</span>" +
+      "</td>" +
+    "</tr></table>" +
+    _detalleTabla(filas) +
+    "<p style='margin:20px 0 0;font-size:13px;color:#9ca3af;text-align:center;'>" +
+    "Cuando recibamos tu pago, confirmaremos tu cita. Si tienes dudas, responde este email.</p>";
+
+  var html = _xhtmlEnvelope("Solicitud de Reserva Recibida", cuerpo, "#d97706");
+  try {
+    MailApp.sendEmail({ to:p.email, subject:"⏳ Se recibió tu solicitud de reserva — "+NEGOCIO_NOMBRE,
+      htmlBody:html, name:NEGOCIO_NOMBRE, replyTo:NEGOCIO_EMAIL });
+  } catch(e) { log("ERROR","enviarConfirmacion",p.reservaID||"",p.email,{},e.message); }
+}
+
+// [AUDIT:email-confirmacion] Email enviado cuando pago es confirmado: "Reserva Confirmada"
+function enviarReservaConfirmada(p) {
+  if (!p.email) return;
+  var precioFmt = "$" + (p.precio||0).toLocaleString("es-CL") + " CLP";
+  var filas = [
+    ["Servicio",    _esc(p.servicioNombre)],
+    ["Especialista",_esc(p.empleadoNombre)],
+    ["Fecha",       _fmtFecha(p.fecha)],
+    ["Horario",     _esc(p.horaInicio) + " – " + _esc(p.horaFin)],
+    ["Precio",      "<strong style='color:" + COLOR_PRIMARY + ";'>" + precioFmt + "</strong>"],
+  ];
 
   var cuerpo =
     "<p style='font-size:15px;color:#374151;margin:0 0 8px'>Hola, <strong>" + _esc(p.nombre) + "</strong> 👋</p>" +
@@ -152,7 +184,7 @@ function enviarConfirmacion(p) {
   try {
     MailApp.sendEmail({ to:p.email, subject:"✅ Tu reserva está confirmada — "+NEGOCIO_NOMBRE,
       htmlBody:html, name:NEGOCIO_NOMBRE, replyTo:NEGOCIO_EMAIL });
-  } catch(e) { log("ERROR","enviarConfirmacion",p.reservaID||"",p.email,{},e.message); }
+  } catch(e) { log("ERROR","enviarReservaConfirmada",p.reservaID||"",p.email,{},e.message); }
 }
 
 function enviarCancelacion(p, canceladoPor) {
@@ -192,11 +224,17 @@ function enviarCancelacion(p, canceladoPor) {
 
 function notificarAdmin(p, tipo) {
   if (!NEGOCIO_EMAIL) return;
-  var esNueva = tipo === "nueva";
-  var color   = esNueva ? "#16a34a" : "#ea580c";
-  var asunto  = esNueva
-    ? "🔔 Nueva reserva — " + (p.nombre||"") + " · " + (p.horaInicio||"")
-    : "❌ Cancelación — " + (p.nombre||"") + " · " + (p.fecha||"");
+  var color, asunto, titulo, badge_msg;
+  if (tipo === "nueva") {
+    color = "#d97706"; titulo = "Nueva Solicitud"; badge_msg = "📝  Solicitud pendiente de pago";
+    asunto = "📝 Nueva solicitud — " + (p.nombre||"") + " · " + (p.horaInicio||"");
+  } else if (tipo === "pagada") {
+    color = "#16a34a"; titulo = "Pago Confirmado"; badge_msg = "✅  Pago confirmado - Reserva activa";
+    asunto = "✅ Pago confirmado — " + (p.nombre||"") + " · " + (p.horaInicio||"");
+  } else {
+    color = "#ea580c"; titulo = "Reserva Cancelada"; badge_msg = "❌  Reserva cancelada";
+    asunto = "❌ Cancelación — " + (p.nombre||"") + " · " + (p.fecha||"");
+  }
 
   var filas = [
     ["Cliente",    _esc(p.nombre||"")],
@@ -211,12 +249,13 @@ function notificarAdmin(p, tipo) {
   if (p.precio) filas.push(["Precio", "$" + parseFloat(p.precio).toLocaleString("es-CL") + " CLP"]);
   if (p.notas)  filas.push(["Notas",  "<em style='color:#6b7280;'>" + _esc(p.notas) + "</em>"]);
 
+  var bgColor = tipo === "nueva" ? "#fef3c7" : (tipo === "pagada" ? "#f0fdf4" : "#fff7ed");
+  var bdColor = tipo === "nueva" ? "#fcd34d" : (tipo === "pagada" ? "#bbf7d0" : "#fed7aa");
+
   var badge =
     "<table cellpadding='0' cellspacing='0' border='0'><tr>" +
-      "<td style='background:" + (esNueva?"#f0fdf4":"#fff7ed") + ";border:1.5px solid " + (esNueva?"#bbf7d0":"#fed7aa") + ";border-radius:8px;padding:8px 14px;'>" +
-        "<span style='font-size:13px;font-weight:700;color:" + color + ";'>" +
-          (esNueva ? "✅  Nueva reserva confirmada" : "❌  Reserva cancelada") +
-        "</span>" +
+      "<td style='background:" + bgColor + ";border:1.5px solid " + bdColor + ";border-radius:8px;padding:8px 14px;'>" +
+        "<span style='font-size:13px;font-weight:700;color:" + color + ";'>" + badge_msg + "</span>" +
       "</td>" +
     "</tr></table>";
 
@@ -224,7 +263,7 @@ function notificarAdmin(p, tipo) {
     Utilities.formatDate(new Date(),TZ,"dd/MM/yyyy 'a las' HH:mm") + "</p>";
 
   var cuerpo = badge + _detalleTabla(filas) + ts;
-  var html   = _xhtmlEnvelope(esNueva ? "Nueva Reserva" : "Reserva Cancelada", cuerpo, color);
+  var html   = _xhtmlEnvelope(titulo, cuerpo, color);
   try {
     MailApp.sendEmail({ to:NEGOCIO_EMAIL, subject:asunto, htmlBody:html, name:NEGOCIO_NOMBRE+" · Admin" });
   } catch(e) { log("ERROR","notificarAdmin",p.reservaID||"",p.nombre||"",{},e.message); }
@@ -269,14 +308,19 @@ function enviarGiftCard(p) {
 function notificarSlack(p, tipo) {
   if (!SLACK_WEBHOOK_URL) return;
   try {
-    var esNueva = tipo === "nueva";
-    var texto = esNueva
-      ? "✨ *Nueva reserva confirmada*\n*Cliente:* " + (p.nombre||"") +
+    var texto = tipo === "nueva"
+      ? "📝 *Nueva solicitud de reserva* (espera pago)\n*Cliente:* " + (p.nombre||"") +
         "\n*Servicio:* " + (p.servicioNombre||"") +
         "\n*Especialista:* " + (p.empleadoNombre||"") +
         "\n*Fecha:* " + (p.fecha||"") + " a las " + (p.horaInicio||"") +
-        "\n*N° Reserva:* " + (p.reservaID||"") +
+        "\n*N° Solicitud:* " + (p.reservaID||"") +
         "\n*Precio:* $" + parseFloat(p.precio||0).toLocaleString("es-CL") + " CLP"
+      : tipo === "pagada"
+      ? "✅ *Pago confirmado - Reserva activa*\n*Cliente:* " + (p.nombre||"") +
+        "\n*Servicio:* " + (p.servicioNombre||"") +
+        "\n*Especialista:* " + (p.empleadoNombre||"") +
+        "\n*Fecha:* " + (p.fecha||"") + " a las " + (p.horaInicio||"") +
+        "\n*N° Reserva:* " + (p.reservaID||"")
       : "❌ *Reserva cancelada*\n*Cliente:* " + (p.nombre||"") +
         "\n*Reserva:* " + (p.reservaID||"") +
         "\n*Fecha:* " + (p.fecha||"");
