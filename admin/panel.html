@@ -1037,6 +1037,7 @@ async function renderGiftCards() {
   const res = await API.listGiftCards();
   loader(false);
   const list = res.giftCards || [];
+  window.giftCardsData = list; // Store for PDF download
 
   const c = document.getElementById('main-content');
   c.innerHTML = `
@@ -1049,7 +1050,7 @@ async function renderGiftCards() {
       </div>
       <div class="tbl-wrap">
         <table class="tbl">
-          <thead><tr><th>Código</th><th>Monto</th><th>Usado</th><th>Saldo</th><th>Estado</th><th>Destinatario</th><th>Vence</th></tr></thead>
+          <thead><tr><th>Código</th><th>Monto</th><th>Usado</th><th>Saldo</th><th>Estado</th><th>Destinatario</th><th>Vence</th><th style="width:40px">PDF</th></tr></thead>
           <tbody>
             ${list.length ? list.map(gc => {
               const saldo = parseFloat(gc.monto) - parseFloat(gc.monto_usado||0);
@@ -1061,13 +1062,22 @@ async function renderGiftCards() {
                 <td>${badge(gc.estado)}</td>
                 <td style="font-size:12px">${esc(gc.destinatario_nombre||'—')}</td>
                 <td style="font-size:12px;color:var(--muted)">${gc.fecha_vencimiento||'Sin vencimiento'}</td>
+                <td style="text-align:center">
+                  <button class="btn btn-sm btn-ghost" onclick="descargarPDFGiftCardAdmin('${gc.codigo}')" title="Descargar PDF">📄</button>
+                </td>
               </tr>`;
-            }).join('') : '<tr><td colspan="7" class="tbl-empty">Sin gift cards aún</td></tr>'}
+            }).join('') : '<tr><td colspan="8" class="tbl-empty">Sin gift cards aún</td></tr>'}
           </tbody>
         </table>
       </div>
     </div>
   `;
+}
+
+function descargarPDFGiftCardAdmin(codigo) {
+  const gc = (window.giftCardsData || []).find(g => g.codigo === codigo);
+  if (!gc) { toast('Gift card no encontrada', 'error'); return; }
+  descargarPDFGiftCard(codigo, gc);
 }
 
 async function crearGiftCard() {
@@ -1230,6 +1240,7 @@ async function verDetalle(reservaID) {
     foot.appendChild(b);
   };
 
+  addBtn('📄 Comprobante', 'btn-ghost', () => descargarPDFComprobante(r));
   if (!['Cancelada'].includes(r.estado)) {
     addBtn('💰 Pago recibido', 'btn-gold',    () => cambiarEstado(r.id, 'Pagada'));
     addBtn('✅ Completar',     'btn-success',  () => cambiarEstado(r.id, 'Completada'));
@@ -1242,16 +1253,35 @@ async function verDetalle(reservaID) {
 }
 
 async function cambiarEstado(reservaID, estado) {
+  // Obtener reserva actual para validaciones
+  const r = (S.data?.reservasHoy || S.reservas || []).find(x => x.id === reservaID);
+
+  // [AUDIT:reactivacion-pago] Si cambio es Cancelada → Pagada, pedir confirmación
+  if (r?.estado === 'Cancelada' && estado === 'Pagada') {
+    if (!confirm('⚠️ REACTIVACIÓN DE CITA CANCELADA\n\n' +
+                 'Esta cita fue cancelada por falta de pago.\n\n' +
+                 '✓ El cliente confirma que realizó el pago.\n' +
+                 '✓ Se validará nuevamente la disponibilidad del horario.\n\n' +
+                 '¿Proceder con la reactivación?')) {
+      return;
+    }
+  }
+
   closeModal('modal-detalle');
   loader(true);
   const res = await API.actualizarEstado(reservaID, estado);
   loader(false);
+
   if (res.ok) {
     toast(`✅ Estado cambiado a ${estado}`, 'success');
     await recargar();
   } else {
     authCheck(res);
-    toast('Error: ' + (res.error || 'No se pudo actualizar'), 'error');
+    if (res.error?.includes('horario') || res.error?.includes('ocupado')) {
+      toast('⚠️ El horario ya está ocupado. Ofrecer al cliente reagendar.', 'warning');
+    } else {
+      toast('Error: ' + (res.error || 'No se pudo actualizar'), 'error');
+    }
   }
 }
 
@@ -1437,5 +1467,10 @@ function fmtFechaLarga(str) {
   return `${dias[f.getDay()]}, ${f.getDate()} de ${meses[f.getMonth()]} ${f.getFullYear()}`;
 }
 </script>
+
+<!-- html2pdf.js para generación de PDFs (Phase 3) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<!-- Admin PDF utilities (Gift Cards + Comprobantes) -->
+<script src="../js/admin-pdf.js"></script>
 </body>
 </html>

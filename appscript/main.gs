@@ -21,6 +21,8 @@ function doPost(e) {
         return _handleActualizarEstado(p.reservaID, p.estado);
       case "reagendarReserva":
         return _handleReagendar(body);
+      case "marcarCompletada":
+        return _handleMarcarCompletada(body.payload || body);
       case "enviarGiftCard":
         return _handleEnviarGiftCard(body.payload || body);
       default:
@@ -105,6 +107,19 @@ function _handleReagendar(body) {
     return jsonOut({ ok: true });
   } catch(e) {
     log("ERROR", "reagendarReserva", body.reservaID || "", "", {}, e.message);
+    return jsonOut({ ok: false, error: e.message });
+  }
+}
+
+// [AUDIT:email-completada] Email cuando admin marca cita como completada
+function _handleMarcarCompletada(payload) {
+  if (!payload || !payload.email) return jsonOut({ ok: false, error: "Payload vacío" });
+  try {
+    enviarConfirmacionCompletada(payload);
+    log("INFO", "marcarCompletada", payload.reservaID || "", payload.nombre, {}, "GAS OK");
+    return jsonOut({ ok: true });
+  } catch(e) {
+    log("ERROR", "marcarCompletada", payload.reservaID || "", payload.nombre || "", {}, e.message);
     return jsonOut({ ok: false, error: e.message });
   }
 }

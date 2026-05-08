@@ -218,6 +218,26 @@ function enviarCancelacion(p, canceladoPor) {
   } catch(e) { log("ERROR","enviarCancelacion",p.reservaID||"",p.email,{},e.message); }
 }
 
+// [AUDIT:email-completada] Email cuando admin marca cita como completada: agradecimiento al cliente
+function enviarConfirmacionCompletada(p) {
+  if (!p.email) return;
+  var cuerpo =
+    "<p style='font-size:15px;color:#374151;margin:0 0 8px'>Hola, <strong>" + _esc(p.nombre) + "</strong> 👋</p>" +
+    "<p style='font-size:14px;color:#6b7280;line-height:1.6;margin:0 0 16px'>Tu servicio de <strong>" + _esc(p.servicioNombre) + "</strong> del " + _fmtFecha(p.fecha) + " ha sido marcado como completado.</p>" +
+    "<table cellpadding='0' cellspacing='0' border='0'><tr>" +
+      "<td style='background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:8px 14px;'>" +
+        "<span style='font-size:13px;font-weight:700;color:#16a34a;'>✅ &nbsp;Servicio completado</span>" +
+      "</td>" +
+    "</tr></table>" +
+    "<p style='margin:20px 0 0;font-size:13px;color:#9ca3af;text-align:center;'>¡Gracias por confiar en " + NEGOCIO_NOMBRE + "! Esperamos verte pronto.</p>";
+
+  var html = _xhtmlEnvelope("✅ Servicio Completado", cuerpo, "#16a34a");
+  try {
+    MailApp.sendEmail({ to:p.email, subject:"✅ Tu servicio ha sido completado — "+NEGOCIO_NOMBRE,
+      htmlBody:html, name:NEGOCIO_NOMBRE, replyTo:NEGOCIO_EMAIL });
+  } catch(e) { log("ERROR","enviarConfirmacionCompletada",p.reservaID||"",p.email,{},e.message); }
+}
+
 // ═══════════════════════════════════════════════════════════════
 // NOTIFICACIÓN ADMIN
 // ═══════════════════════════════════════════════════════════════

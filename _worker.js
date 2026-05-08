@@ -12,6 +12,10 @@
      DELETE /api/slots/bloqueo/:id → libera bloqueo
      GET  /api/giftcards/:codigo   → valida gift card
      GET  /api/fidelizacion/qr/:token
+   Rutas cliente (Supabase Auth token):
+     GET  /api/cliente/reservas?estado=&desde=&hasta=
+     GET  /api/cliente/perfil
+     POST /api/cliente/cancelar-reserva
    Rutas admin (cookie httpOnly HMAC-SHA256):
      POST /api/admin/login
      POST /api/admin/logout
@@ -172,6 +176,36 @@ async function verificarCookie(request, env) {
   }
 }
 
+// ── SUPABASE AUTH CLIENTE ──────────────────────────────────────
+
+async function verificarTokenSupabase(token) {
+  if (!token) return null;
+
+  try {
+    // Token de Supabase es JWT: header.payload.signature
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+
+    // Decodificar payload (no validamos firma, Supabase lo garantiza)
+    const payload = JSON.parse(atob(parts[1]));
+
+    // Verificar expiración
+    const ahora = Math.floor(Date.now() / 1000);
+    if (payload.exp && payload.exp < ahora) return null;
+
+    // Retornar datos del usuario (email está en sub o email)
+    return {
+      email: payload.email || payload.user_metadata?.email,
+      sub: payload.sub,
+      iat: payload.iat,
+      exp: payload.exp,
+    };
+  } catch (e) {
+    console.error('Supabase token error:', e.message);
+    return null;
+  }
+}
+
 // ── RATE LIMITING (KV) ────────────────────────────────────────
 
 async function checkRateLimit(env, key, maxReq, windowMs) {
@@ -241,6 +275,15 @@ function handleHealth(cors) {
   }, 200, cors);
 }
 
+function handleGetConfig(env, cors) {
+  // Retorna credenciales públicas de Supabase para cliente
+  return json({
+    ok: true,
+    supabaseUrl: env.SUPABASE_URL || '',
+    supabaseAnonKey: env.SUPABASE_ANON_KEY || '',
+  }, 200, cors);
+}
+
 async function handleGetServicios(env, cors) {
   const r = await supaFetch(env,
     'servicios?activo=eq.true&order=categoria,nombre&select=*'
@@ -272,6 +315,7 @@ async function handleGetEmpleados(env, cors) {
 async function handleGetDisponibilidad(env, cors, url) {
   const fecha      = url.searchParams.get('fecha')      || '';
   const servicioID = url.searchParams.get('servicioID') || '';
+  const debug      = url.searchParams.get('debug')      === '1';
 
   if (!fecha || !servicioID)
     return json({ ok: false, error: 'Faltan parámetros' }, 400, cors);
@@ -279,20 +323,47 @@ async function handleGetDisponibilidad(env, cors, url) {
     return json({ ok: false, error: 'Fecha inválida' }, 400, cors);
 
   const srvR = await supaFetch(env,
-    `servicios?id=eq.${encodeURIComponent(servicioID)}&select=duracion,requiere_skill`
+    `servicios?id=eq.${encodeURIComponent(servicioID)}&select=*`
   );
   if (!srvR.ok || !srvR.data?.length)
     return json({ ok: false, error: 'Servicio no encontrado' }, 404, cors);
-  const { duracion, requiere_skill } = srvR.data[0];
+
+  const srv = srvR.data[0];
+  const { duracion, requiere_skill } = srv;
+
+  if (debug) {
+    console.log(`[DEBUG] Servicio: ${srv.nombre} | duracion=${duracion} | requiere_skill=${requiere_skill}`);
+  }
 
   const empR = await supaFetch(env, 'empleados?activo=eq.true&select=*');
   if (!empR.ok) return json({ ok: false, error: 'Error empleados' }, 500, cors);
 
   let empleados = empR.data;
   if (requiere_skill) {
-    empleados = empleados.filter(e =>
+    const filtered = empleados.filter(e =>
       Array.isArray(e.skills) && e.skills.includes(requiere_skill)
     );
+    if (debug) {
+      console.log(`[DEBUG] Filtro por skill '${requiere_skill}': ${empleados.length} → ${filtered.length} empleados`);
+      empleados.forEach(e => {
+        console.log(`  - ${e.nombre}: skills=${JSON.stringify(e.skills)}`);
+      });
+    }
+    empleados = filtered;
+  }
+
+  if (debug && empleados.length === 0) {
+    return json({
+      ok: false,
+      error: 'No hay empleados disponibles',
+      debug: {
+        servicio: srv.nombre,
+        requiere_skill,
+        duracion,
+        empleadosTotales: empR.data.length,
+        empleadosFiltrados: 0,
+      }
+    }, 400, cors);
   }
 
   // Reservas + bloqueos activos del día (ambos bloquean slots)
@@ -318,6 +389,10 @@ async function handleGetDisponibilidad(env, cors, url) {
       slots,
       hayDisponibilidad: slots.some(s => s.disponible),
     };
+    if (debug) {
+      const slotsDispo = slots.filter(s => s.disponible).length;
+      console.log(`[DEBUG] ${emp.nombre}: ${slotsDispo} slots disponibles de ${slots.length}`);
+    }
   }
   return json({ ok: true, empleados: result }, 200, cors);
 }
@@ -628,6 +703,171 @@ async function actualizarFidelizacion(env, { nombre, email, telefono, precio }) 
 }
 
 // ═══════════════════════════════════════════════════════════════
+// HANDLERS CLIENTE
+// ═══════════════════════════════════════════════════════════════
+
+async function handleClienteReservas(env, cors, request, url) {
+  const authHeader = request.headers.get('Authorization') || '';
+  const token = authHeader.replace(/^Bearer\s+/i, '');
+
+  const usuario = await verificarTokenSupabase(token);
+  if (!usuario) return json({ ok: false, error: 'No autorizado' }, 401, cors);
+
+  try {
+    const qParams = Object.fromEntries(url.searchParams);
+    const estado = sanitizar(qParams.estado || '', 50);
+    const desde = sanitizar(qParams.desde || '', 50);
+    const hasta = sanitizar(qParams.hasta || '', 50);
+
+    // Construir query para obtener reservas del cliente
+    let query = `reservas?email=eq.${encodeURIComponent(usuario.email.toLowerCase())}&select=*`;
+    if (estado) query += `&estado=eq.${encodeURIComponent(estado)}`;
+    if (desde || hasta) {
+      if (desde) query += `&fecha=gte.${encodeURIComponent(desde)}`;
+      if (hasta) query += `&fecha=lte.${encodeURIComponent(hasta)}`;
+    }
+
+    const r = await supaFetch(env, query);
+    if (!r.ok) return json({ ok: false, error: 'Error al obtener reservas' }, 500, cors);
+
+    return json({
+      ok: true,
+      reservas: (r.data || []).map(res => ({
+        id: res.id,
+        nombre: res.nombre,
+        email: res.email,
+        servicioNombre: res.servicio_nombre,
+        empleadoNombre: res.empleado_nombre,
+        fecha: res.fecha,
+        horaInicio: res.hora_inicio,
+        horaFin: res.hora_fin,
+        estado: res.estado,
+        precio: res.precio,
+      }))
+    }, 200, cors);
+  } catch (e) {
+    console.error('clienteReservas error:', e.message);
+    return json({ ok: false, error: e.message }, 500, cors);
+  }
+}
+
+async function handleClientePerfil(env, cors, request) {
+  const authHeader = request.headers.get('Authorization') || '';
+  const token = authHeader.replace(/^Bearer\s+/i, '');
+
+  const usuario = await verificarTokenSupabase(token);
+  if (!usuario) return json({ ok: false, error: 'No autorizado' }, 401, cors);
+
+  try {
+    // Obtener datos de fidelización
+    const r = await supaFetch(env, `fidelizacion?email=eq.${encodeURIComponent(usuario.email.toLowerCase())}&select=*`);
+    if (!r.ok || !r.data?.length) {
+      return json({
+        ok: true,
+        perfil: {
+          email: usuario.email,
+          nombre: usuario.email,
+          nivel: 'Bronce',
+          puntos: 0,
+          total_visitas: 0,
+          total_gastado: 0,
+        }
+      }, 200, cors);
+    }
+
+    const perfil = r.data[0];
+    return json({
+      ok: true,
+      perfil: {
+        email: perfil.email,
+        nombre: perfil.nombre,
+        nivel: perfil.nivel,
+        puntos: perfil.puntos,
+        total_visitas: perfil.total_visitas,
+        total_gastado: perfil.total_gastado,
+      }
+    }, 200, cors);
+  } catch (e) {
+    console.error('clientePerfil error:', e.message);
+    return json({ ok: false, error: e.message }, 500, cors);
+  }
+}
+
+async function handleClienteCancelarReserva(env, cors, request, ctx) {
+  const authHeader = request.headers.get('Authorization') || '';
+  const token = authHeader.replace(/^Bearer\s+/i, '');
+
+  const usuario = await verificarTokenSupabase(token);
+  if (!usuario) return json({ ok: false, error: 'No autorizado' }, 401, cors);
+
+  let body;
+  try { body = await request.json(); } catch {
+    return json({ ok: false, error: 'JSON inválido' }, 400, cors);
+  }
+
+  const reservaID = sanitizar(body.reservaID || '', 100);
+  if (!reservaID) return json({ ok: false, error: 'Datos incompletos' }, 400, cors);
+
+  try {
+    // Obtener reserva
+    const rFetch = await supaFetch(env, `reservas?id=eq.${encodeURIComponent(reservaID)}&select=*`);
+    if (!rFetch.ok || !rFetch.data?.length) {
+      return json({ ok: false, error: 'Reserva no encontrada' }, 404, cors);
+    }
+
+    const reserva = rFetch.data[0];
+
+    // Validaciones
+    if (reserva.email !== usuario.email.toLowerCase()) {
+      return json({ ok: false, error: 'No es tu reserva' }, 403, cors);
+    }
+
+    if (!['Pagada', 'Pendiente'].includes(reserva.estado)) {
+      return json({ ok: false, error: `No se puede cancelar una cita ${reserva.estado}` }, 409, cors);
+    }
+
+    // Validar que sea más de 24h antes
+    const ahora = new Date();
+    const cita = new Date(`${reserva.fecha}T${reserva.hora_inicio}:00`);
+    const diffMs = cita - ahora;
+    const diffH = diffMs / (1000 * 60 * 60);
+    if (diffH < 24) {
+      return json({ ok: false, error: 'No se puede cancelar con menos de 24 horas de anticipación' }, 409, cors);
+    }
+
+    // Actualizar estado
+    const updateR = await supaFetch(env, `reservas?id=eq.${encodeURIComponent(reservaID)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ estado: 'Cancelada' }),
+    });
+
+    if (!updateR.ok) return json({ ok: false, error: 'Error al cancelar' }, 500, cors);
+
+    // Notificar al cliente y admin
+    ctx.waitUntil(notificarGAS(env, 'cancelarReserva', {
+      reservaID: reserva.id,
+      canceladoPor: 'cliente',
+      payload: {
+        reservaID: reserva.id,
+        nombre: reserva.nombre,
+        email: reserva.email,
+        telefono: reserva.telefono,
+        servicioNombre: reserva.servicio_nombre,
+        empleadoNombre: reserva.empleado_nombre,
+        fecha: reserva.fecha,
+        horaInicio: reserva.hora_inicio,
+        horaFin: reserva.hora_fin,
+      },
+    }));
+
+    return json({ ok: true }, 200, cors);
+  } catch (e) {
+    console.error('clienteCancelarReserva error:', e.message);
+    return json({ ok: false, error: e.message }, 500, cors);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // HANDLERS ADMIN
 // ═══════════════════════════════════════════════════════════════
 
@@ -753,32 +993,101 @@ async function handleAdminActualizarEstado(env, cors, request, ctx) {
   if (!reservaID || !validos.includes(estado))
     return json({ ok: false, error: 'Datos inválidos' }, 400, cors);
 
-  // [AUDIT:pago-confirmacion] Fetch completo si cambio a Pagada para disparar email
-  let reserva = null;
-  if (estado === 'Pagada') {
-    const rFetch = await supaFetch(env, `reservas?id=eq.${encodeURIComponent(reservaID)}&select=*`);
-    if (rFetch.ok && rFetch.data?.length) reserva = rFetch.data[0];
+  // Fetch completo para obtener estado anterior y datos para notificaciones
+  const rFetch = await supaFetch(env, `reservas?id=eq.${encodeURIComponent(reservaID)}&select=*`);
+  if (!rFetch.ok || !rFetch.data?.length)
+    return json({ ok: false, error: 'Reserva no encontrada' }, 404, cors);
+
+  const reserva = rFetch.data[0];
+  const estadoAnterior = reserva.estado;
+
+  // [AUDIT:reactivacion-pago] Validar si cambio es Cancelada → Pagada (pago retardado)
+  if (estadoAnterior === 'Cancelada' && estado === 'Pagada') {
+    // Revalidar que el slot sigue disponible
+    const [resR, bloqR] = await Promise.all([
+      supaFetch(env,
+        `reservas?fecha=eq.${reserva.fecha}&empleado_id=eq.${encodeURIComponent(reserva.empleado_id)}&estado=neq.Cancelada&id=neq.${encodeURIComponent(reservaID)}&select=hora_inicio,hora_fin`
+      ),
+      supaFetch(env,
+        `bloqueos?fecha=eq.${reserva.fecha}&empleado_id=eq.${encodeURIComponent(reserva.empleado_id)}&expires_at=gt.${new Date().toISOString()}&select=hora_inicio,hora_fin`
+      ),
+    ]);
+
+    const ocupados = [...(resR.data || []), ...(bloqR.data || [])];
+    const startMin = horaAMin(reserva.hora_inicio);
+    const duracion = reserva.duracion || 60;
+    const endMin = startMin + duracion;
+
+    const conflicto = ocupados.some(r =>
+      startMin < horaAMin(r.hora_fin) && endMin > horaAMin(r.hora_inicio)
+    );
+
+    if (conflicto) {
+      return json({
+        ok: false,
+        error: 'No se puede reactivar: el horario ya está ocupado. Sugerir al cliente otro horario.',
+        code: 'SLOT_CONFLICT'
+      }, 409, cors);
+    }
   }
 
+  // Actualizar estado en Supabase
   const r = await supaFetch(env, `reservas?id=eq.${encodeURIComponent(reservaID)}`, {
     method: 'PATCH',
     body:   JSON.stringify({ estado }),
   });
   if (!r.ok) return json({ ok: false, error: 'Error al actualizar' }, 500, cors);
 
-  // Si cambió a Pagada, disparar email "Reserva Confirmada"
-  if (estado === 'Pagada' && reserva) {
+  // Disparar notificación apropiada según nuevo estado
+  if (estado === 'Pagada') {
+    // Email de confirmación al cliente (nuevo pago o reactivación)
     ctx.waitUntil(notificarGAS(env, 'confirmarPago', {
       payload: {
-        reservaID, nombre: reserva.nombre, email: reserva.email, telefono: reserva.telefono,
-        servicioNombre: reserva.servicio_nombre, empleadoNombre: reserva.empleado_nombre,
-        fecha: reserva.fecha, horaInicio: reserva.hora_inicio, horaFin: reserva.hora_fin,
+        reservaID: reserva.id,
+        nombre: reserva.nombre,
+        email: reserva.email,
+        telefono: reserva.telefono,
+        servicioNombre: reserva.servicio_nombre,
+        empleadoNombre: reserva.empleado_nombre,
+        fecha: reserva.fecha,
+        horaInicio: reserva.hora_inicio,
+        horaFin: reserva.hora_fin,
         precio: reserva.precio,
       },
     }));
+  } else if (estado === 'Completada') {
+    // Email de agradecimiento al cliente
+    ctx.waitUntil(notificarGAS(env, 'marcarCompletada', {
+      payload: {
+        reservaID: reserva.id,
+        nombre: reserva.nombre,
+        email: reserva.email,
+        servicioNombre: reserva.servicio_nombre,
+        fecha: reserva.fecha,
+      },
+    }));
+  } else if (estado === 'Cancelada' && estadoAnterior !== 'Cancelada') {
+    // Email de cancelación (admin cambió a Cancelada)
+    ctx.waitUntil(notificarGAS(env, 'cancelarReserva', {
+      reservaID: reserva.id,
+      canceladoPor: 'admin',
+      payload: {
+        reservaID: reserva.id,
+        nombre: reserva.nombre,
+        email: reserva.email,
+        telefono: reserva.telefono,
+        servicioNombre: reserva.servicio_nombre,
+        empleadoNombre: reserva.empleado_nombre,
+        fecha: reserva.fecha,
+        horaInicio: reserva.hora_inicio,
+        horaFin: reserva.hora_fin,
+      },
+    }));
   } else {
+    // Cambio genérico (sin email especial)
     ctx.waitUntil(notificarGAS(env, 'actualizarEstado', { params: { reservaID, estado } }));
   }
+
   return json({ ok: true }, 200, cors);
 }
 
@@ -945,10 +1254,22 @@ async function handleAutoCancelarReservas(env) {
       body: JSON.stringify({ estado: 'Cancelada', cancelado_por: 'sistema-pago' }),
     });
     if (upd.ok) {
+      const gasPayload = {
+        reservaID: reserva.id,
+        nombre: reserva.nombre,
+        email: reserva.email,
+        telefono: reserva.telefono,
+        servicioNombre: reserva.servicio_nombre,
+        empleadoNombre: reserva.empleado_nombre,
+        fecha: reserva.fecha,
+        horaInicio: reserva.hora_inicio,
+        horaFin: reserva.hora_fin,
+        precio: reserva.precio,
+      };
       await notificarGAS(env, 'cancelarReserva', {
         reservaID: reserva.id,
         canceladoPor: 'sistema-pago',
-        payload: formatReservaGAS(reserva),
+        payload: gasPayload,
       });
       console.log(`[cron] Auto-cancelada por falta de pago: ${reserva.id}`);
     }
@@ -992,6 +1313,8 @@ export default {
         // ── PÚBLICAS ───────────────────────────────────────
         if (method === 'GET'  && path === '/api/health')
           return handleHealth(cors);
+        if (method === 'GET'  && path === '/api/config')
+          return handleGetConfig(env, cors);
         if (method === 'GET'  && path === '/api/servicios')
           return handleGetServicios(env, cors);
         if (method === 'GET'  && path === '/api/empleados')
@@ -1016,6 +1339,14 @@ export default {
           return handleValidarGiftCard(env, cors, decodeURIComponent(path.split('/').pop()));
         if (method === 'GET'  && path.startsWith('/api/fidelizacion/qr/'))
           return handleQRFidelizacion(env, cors, decodeURIComponent(path.split('/').pop()));
+
+        // ── CLIENTE PROTEGIDAS ─────────────────────────────
+        if (method === 'GET'  && path === '/api/cliente/reservas')
+          return handleClienteReservas(env, cors, request, url);
+        if (method === 'GET'  && path === '/api/cliente/perfil')
+          return handleClientePerfil(env, cors, request);
+        if (method === 'POST' && path === '/api/cliente/cancelar-reserva')
+          return handleClienteCancelarReserva(env, cors, request, ctx);
 
         // ── AUTH ADMIN ────────────────────────────────────
         if (method === 'POST' && path === '/api/admin/login') {
