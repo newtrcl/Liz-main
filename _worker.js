@@ -980,6 +980,167 @@ async function handleAdminReportes(env, cors, url) {
   }, 200, cors);
 }
 
+// ── REPORTES: RESUMEN ─────────────────────────────────────────
+async function handleAdminReportesResumen(env, cors, url) {
+  const desde = url.searchParams.get('desde') || hoyISO().slice(0, 7) + '-01';
+  const hasta = url.searchParams.get('hasta') || hoyISO();
+
+  // Obtener todas las reservas en el rango
+  const r = await supaFetch(env,
+    `reservas?fecha=gte.${desde}&fecha=lte.${hasta}&order=fecha&select=*`
+  );
+  if (!r.ok) return json({ ok: false, error: 'Error al cargar datos' }, 500, cors);
+
+  const todasReservas = Array.isArray(r.data) ? r.data.map(mapReserva) : [];
+
+  // Calcular estadísticas
+  const pagadas = todasReservas.filter(r => r.estado === 'Pagada').length;
+  const completadas = todasReservas.filter(r => r.estado === 'Completada').length;
+  const canceladas = todasReservas.filter(r => r.estado === 'Cancelada').length;
+  const pendientes = todasReservas.filter(r => r.estado === 'Pendiente').length;
+
+  const ingresoTotal = todasReservas
+    .filter(r => ['Pagada', 'Completada'].includes(r.estado))
+    .reduce((sum, r) => sum + r.precio, 0);
+
+  const promedioPrecio = todasReservas.length > 0
+    ? Math.round(ingresoTotal / todasReservas.length)
+    : 0;
+
+  // Top especialistas y servicios
+  const porEmpleado = {};
+  const porServicio = {};
+  for (const res of todasReservas) {
+    if (!porEmpleado[res.empleadoNombre])
+      porEmpleado[res.empleadoNombre] = 0;
+    porEmpleado[res.empleadoNombre]++;
+
+    if (!porServicio[res.servicioNombre])
+      porServicio[res.servicioNombre] = 0;
+    porServicio[res.servicioNombre]++;
+  }
+
+  const topEspecialista = Object.entries(porEmpleado)
+    .sort((a, b) => b[1] - a[1])[0];
+  const topServicio = Object.entries(porServicio)
+    .sort((a, b) => b[1] - a[1])[0];
+
+  return json({
+    ok: true,
+    desde, hasta,
+    resumen: {
+      total_reservas: todasReservas.length,
+      pagadas,
+      completadas,
+      canceladas,
+      pendientes,
+      ingresos_total: ingresoTotal,
+      promedio_precio: promedioPrecio,
+      especialista_top: topEspecialista ? `${topEspecialista[0]} (${topEspecialista[1]} citas)` : '—',
+      servicio_popular: topServicio ? `${topServicio[0]} (${topServicio[1]} citas)` : '—',
+      tasa_conversion: todasReservas.length > 0
+        ? `${Math.round((completadas / todasReservas.length) * 100)}%`
+        : '0%',
+    }
+  }, 200, cors);
+}
+
+// ── REPORTES: CSV EXPORT ──────────────────────────────────────
+async function handleAdminReportesExcel(env, cors, url) {
+  const desde = url.searchParams.get('desde') || hoyISO().slice(0, 7) + '-01';
+  const hasta = url.searchParams.get('hasta') || hoyISO();
+
+  const r = await supaFetch(env,
+    `reservas?fecha=gte.${desde}&fecha=lte.${hasta}&order=fecha,hora_inicio&select=*`
+  );
+  if (!r.ok) return json({ ok: false, error: 'Error al cargar datos' }, 500, cors);
+
+  const reservas = Array.isArray(r.data) ? r.data.map(mapReserva) : [];
+
+  // Headers CSV
+  const headers = ['ID', 'Fecha', 'Hora', 'Cliente', 'Email', 'Teléfono', 'Servicio', 'Especialista', 'Precio', 'Estado'];
+
+  // Rows CSV
+  const rows = reservas.map(r => [
+    r.id,
+    r.fecha,
+    `${r.horaInicio}-${r.horaFin}`,
+    r.nombre,
+    r.email,
+    r.telefono || '—',
+    r.servicioNombre,
+    r.empleadoNombre,
+    r.precio,
+    r.estado,
+  ]);
+
+  // Construir CSV
+  const csv = [
+    headers.join(','),
+    ...rows.map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+  ].join('\n');
+
+  return new Response(csv, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': `attachment; filename="reportes_${desde}_${hasta}.csv"`,
+      ...cors,
+    },
+  });
+}
+
+// ── REPORTES: DATOS PARA GRÁFICOS ────────────────────────────
+async function handleAdminReportesGraficos(env, cors, url) {
+  const desde = url.searchParams.get('desde') || hoyISO().slice(0, 7) + '-01';
+  const hasta = url.searchParams.get('hasta') || hoyISO();
+
+  const r = await supaFetch(env,
+    `reservas?fecha=gte.${desde}&fecha=lte.${hasta}&order=fecha&select=*`
+  );
+  if (!r.ok) return json({ ok: false, error: 'Error al cargar datos' }, 500, cors);
+
+  const reservas = Array.isArray(r.data) ? r.data.map(mapReserva) : [];
+
+  // Por día (últimos 30 días)
+  const porDia = {};
+  for (const res of reservas) {
+    if (!porDia[res.fecha])
+      porDia[res.fecha] = { date: res.fecha, reservas: 0, ingresos: 0 };
+    porDia[res.fecha].reservas++;
+    if (['Pagada', 'Completada'].includes(res.estado))
+      porDia[res.fecha].ingresos += res.precio;
+  }
+
+  // Por servicio
+  const porServicio = {};
+  for (const res of reservas) {
+    if (!porServicio[res.servicioNombre])
+      porServicio[res.servicioNombre] = 0;
+    porServicio[res.servicioNombre]++;
+  }
+
+  // Por especialista
+  const porEspecialista = {};
+  for (const res of reservas) {
+    if (!porEspecialista[res.empleadoNombre])
+      porEspecialista[res.empleadoNombre] = 0;
+    porEspecialista[res.empleadoNombre]++;
+  }
+
+  return json({
+    ok: true,
+    desde, hasta,
+    porDia: Object.values(porDia).sort((a, b) => a.date.localeCompare(b.date)),
+    porServicio: Object.entries(porServicio)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value),
+    porEspecialista: Object.entries(porEspecialista)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value),
+  }, 200, cors);
+}
+
 async function handleAdminActualizarEstado(env, cors, request, ctx) {
   let body;
   try { body = await request.json(); } catch {
@@ -1367,6 +1528,12 @@ export default {
           return handleAdminReservasPorDia(env, cors, url);
         if (method === 'GET'  && path === '/api/admin/reportes')
           return handleAdminReportes(env, cors, url);
+        if (method === 'GET'  && path === '/api/admin/reportes/resumen')
+          return handleAdminReportesResumen(env, cors, url);
+        if (method === 'GET'  && path === '/api/admin/reportes/excel')
+          return handleAdminReportesExcel(env, cors, url);
+        if (method === 'GET'  && path === '/api/admin/reportes/grafico-datos')
+          return handleAdminReportesGraficos(env, cors, url);
         if (method === 'POST' && path === '/api/admin/reservas/estado')
           return handleAdminActualizarEstado(env, cors, request, ctx);
         if (method === 'POST' && path === '/api/admin/reservas/cancelar')

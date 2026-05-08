@@ -816,7 +816,11 @@ async function renderReportes() {
   const hoy   = hoyStr();
   const desde = hoy.slice(0, 7) + '-01';
   loader(true);
-  const data = await API.getReportes(desde, hoy);
+  const [data, resumen, graficos] = await Promise.all([
+    API.getReportes(desde, hoy),
+    API.getReportesResumen(desde, hoy),
+    API.getReportesGraficos(desde, hoy),
+  ]);
   loader(false);
   if (!data.ok) { authCheck(data); return; }
 
@@ -835,8 +839,8 @@ async function renderReportes() {
         <button class="btn btn-ghost btn-sm" onclick="exportarPDF()">
           <span class="material-symbols-outlined" style="font-size:15px">picture_as_pdf</span> PDF
         </button>
-        <button class="btn btn-ghost btn-sm" onclick="exportarExcel()">
-          <span class="material-symbols-outlined" style="font-size:15px">table_view</span> Excel
+        <button class="btn btn-ghost btn-sm" onclick="exportarCSV()">
+          <span class="material-symbols-outlined" style="font-size:15px">table_view</span> CSV
         </button>
       </div>
     </div>
@@ -850,15 +854,32 @@ async function renderReportes() {
         <div class="stat-val" id="rep-total-ingreso" style="font-size:16px">$${(data.totales.ingreso||0).toLocaleString('es-CL')}</div>
         <div class="stat-lbl">Ingreso total</div>
       </div>
+      <div class="stat-box stat-box--blue">
+        <div class="stat-val" id="rep-promedio-precio" style="font-size:16px">$${(resumen.resumen?.promedio_precio||0).toLocaleString('es-CL')}</div>
+        <div class="stat-lbl">Precio promedio</div>
+      </div>
+      <div class="stat-box stat-box--info">
+        <div class="stat-val" id="rep-tasa-conversion">${resumen.resumen?.tasa_conversion || '0%'}</div>
+        <div class="stat-lbl">Tasa de conversión</div>
+      </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
       <div class="card">
         <div class="card-header"><span class="card-title">📊 Reservas por día</span></div>
         <div class="card-body">
           <div class="chart-wrap" id="chart-fecha">${barChart(data.porFecha,'fecha','total')}</div>
         </div>
       </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">💰 Ingresos por día</span></div>
+        <div class="card-body">
+          <div class="chart-wrap" id="chart-ingresos">${barChart(graficos.porDia||[],'date','ingresos')}</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
       <div class="card">
         <div class="card-header"><span class="card-title">💇 Por servicio</span></div>
         <div class="card-body" style="padding:0">
@@ -929,14 +950,21 @@ async function cargarReportes() {
   const desde = document.getElementById('rep-desde').value;
   const hasta = document.getElementById('rep-hasta').value;
   loader(true);
-  const data = await API.getReportes(desde, hasta);
+  const [data, resumen, graficos] = await Promise.all([
+    API.getReportes(desde, hasta),
+    API.getReportesResumen(desde, hasta),
+    API.getReportesGraficos(desde, hasta),
+  ]);
   loader(false);
   if (!data.ok) return;
   document.getElementById('chart-fecha').innerHTML        = barChart(data.porFecha, 'fecha', 'total');
+  document.getElementById('chart-ingresos').innerHTML     = barChart(graficos.porDia||[], 'date', 'ingresos');
   document.getElementById('rep-tbody-servicio').innerHTML = _repFilasServicio(data.porServicio);
   document.getElementById('rep-tbody-empleado').innerHTML = _repFilasEmpleado(data.porEmpleado);
   document.getElementById('rep-total-reservas').textContent = data.totales.reservas;
   document.getElementById('rep-total-ingreso').textContent  = `$${(data.totales.ingreso||0).toLocaleString('es-CL')}`;
+  document.getElementById('rep-promedio-precio').textContent = `$${(resumen.resumen?.promedio_precio||0).toLocaleString('es-CL')}`;
+  document.getElementById('rep-tasa-conversion').textContent = resumen.resumen?.tasa_conversion || '0%';
   window._repData  = data;
   window._repDesde = desde;
   window._repHasta = hasta;
@@ -1317,6 +1345,105 @@ async function confirmarReagendar() {
 }
 
 // ══════════════════════════════════════════════════════════════
+// API CLIENT METHODS
+// ══════════════════════════════════════════════════════════════
+
+const API = {
+  // ── DASHBOARD ──────────────────────────────────────────────
+  async getDashboard() {
+    const res = await fetch('/api/admin/dashboard');
+    return res.json();
+  },
+
+  async getReservasPorDia(fecha) {
+    const res = await fetch(`/api/admin/reservas?fecha=${fecha}`);
+    return res.json();
+  },
+
+  // ── REPORTES GENÉRICOS ────────────────────────────────────
+  async getReportes(desde, hasta) {
+    const res = await fetch(`/api/admin/reportes?desde=${desde}&hasta=${hasta}`);
+    return res.json();
+  },
+
+  // ── REPORTES ESPECÍFICOS (Phase 3) ────────────────────────
+  async getReportesResumen(desde, hasta) {
+    const res = await fetch(`/api/admin/reportes/resumen?desde=${desde}&hasta=${hasta}`);
+    return res.json();
+  },
+
+  async descargarReportesExcel(desde, hasta) {
+    // Descarga CSV
+    window.location.href = `/api/admin/reportes/excel?desde=${desde}&hasta=${hasta}`;
+  },
+
+  async getReportesGraficos(desde, hasta) {
+    const res = await fetch(`/api/admin/reportes/grafico-datos?desde=${desde}&hasta=${hasta}`);
+    return res.json();
+  },
+
+  // ── ESTADO ─────────────────────────────────────────────────
+  async cambiarEstado(reservaID, estado) {
+    const res = await fetch('/api/admin/reservas/estado', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reservaID, estado })
+    });
+    return res.json();
+  },
+
+  async cancelarAdmin(reservaID) {
+    const res = await fetch('/api/admin/reservas/cancelar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reservaID })
+    });
+    return res.json();
+  },
+
+  async reagendar(reservaID, fecha, hora) {
+    const res = await fetch('/api/admin/reservas/reagendar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reservaID, fecha, hora })
+    });
+    return res.json();
+  },
+
+  // ── GIFT CARDS ─────────────────────────────────────────────
+  async crearGiftCard(data) {
+    const res = await fetch('/api/admin/giftcards', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    return res.json();
+  },
+
+  async listGiftCards() {
+    const res = await fetch('/api/admin/giftcards');
+    return res.json();
+  },
+
+  // ── FIDELIZACIÓN ───────────────────────────────────────────
+  async getFidelizacion(email, limit = 100) {
+    const url = `/api/admin/fidelizacion?limit=${limit}${email ? '&email=' + email : ''}`;
+    const res = await fetch(url);
+    return res.json();
+  },
+
+  // ── AUTENTICACIÓN ──────────────────────────────────────────
+  async adminLogout() {
+    const res = await fetch('/api/admin/logout', { method: 'POST' });
+    return res.json();
+  },
+
+  async actualizarEstado(reservaID, estado) {
+    return this.cambiarEstado(reservaID, estado);
+  },
+};
+
+// ══════════════════════════════════════════════════════════════
 // HELPERS DE RENDER
 // ══════════════════════════════════════════════════════════════
 
@@ -1400,6 +1527,13 @@ function esc(str) {
 
 // ── EXPORTAR CSV ──────────────────────────────────────────────
 function exportarCSV() {
+  // Si estamos en reportes, descargar desde endpoint
+  if (window._repDesde && window._repHasta) {
+    API.descargarReportesExcel(window._repDesde, window._repHasta);
+    return;
+  }
+
+  // Si no, exportar datos del día
   const list = S.data?.reservasHoy || S.reservas || [];
   if (!list.length) { toast('No hay datos para exportar', 'error'); return; }
   const headers = ['ID','Nombre','Email','Teléfono','Servicio','Especialista','Fecha','Hora Inicio','Hora Fin','Estado','Precio','Notas'];
