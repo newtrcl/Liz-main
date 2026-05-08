@@ -15,6 +15,7 @@ binding   = "ASSETS"
 # ── Variables públicas (no secretas) ─────────────────────────
 [vars]
 SUPABASE_URL = "https://dkryjxgjqmikrhusxsau.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrcnlqeGdqcW1pa3JodXN4c2F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MTc2NDksImV4cCI6MjA5MzQ5MzY0OX0.itkOk5FzP_-mn8LD3N572OAZk67sh_4z_YMnMR-8gSM"
 
 # ── Cron: auto-cancelar reservas sin pago cada 30 min ────────
 [triggers]
