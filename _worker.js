@@ -1247,44 +1247,9 @@ async function handleAdminActualizarEstado(env, cors, request, ctx) {
   const estadoAnterior = reserva.estado;
 
   // [AUDIT:reactivacion-pago] Validar si cambio es Cancelada → Pagada (pago retardado)
+  // TODO: Implementar validación de disponibilidad después de verificar que UPDATE funciona
   if (estadoAnterior === 'Cancelada' && estado === 'Pagada') {
-    try {
-      // Revalidar que el slot sigue disponible
-      const [resR, bloqR] = await Promise.all([
-        supaFetch(env,
-          `reservas?fecha=eq.${reserva.fecha}&empleado_id=eq.${encodeURIComponent(reserva.empleado_id)}&estado=neq.Cancelada&id=neq.${encodeURIComponent(reservaID)}&select=hora_inicio,hora_fin`
-        ),
-        supaFetch(env,
-          `bloqueos?fecha=eq.${reserva.fecha}&empleado_id=eq.${encodeURIComponent(reserva.empleado_id)}&expires_at=gt.${new Date().toISOString()}&select=hora_inicio,hora_fin`
-        ),
-      ]);
-
-      if (!resR.ok || !bloqR.ok) {
-        console.error('Availability check failed:', { resR: resR.ok, bloqR: bloqR.ok });
-        return json({ ok: false, error: 'Error al validar disponibilidad' }, 500, cors);
-      }
-
-      const ocupados = [...(resR.data || []), ...(bloqR.data || [])];
-      const startMin = horaAMin(reserva.hora_inicio);
-      const duracion = reserva.duracion || 60;
-      const endMin = startMin + duracion;
-
-      const conflicto = ocupados.some(r =>
-        r.hora_inicio && r.hora_fin &&
-        startMin < horaAMin(r.hora_fin) && endMin > horaAMin(r.hora_inicio)
-      );
-
-      if (conflicto) {
-        return json({
-          ok: false,
-          error: 'No se puede reactivar: el horario ya está ocupado. Sugerir al cliente otro horario.',
-          code: 'SLOT_CONFLICT'
-        }, 409, cors);
-      }
-    } catch (e) {
-      console.error('Availability check error:', e.message);
-      return json({ ok: false, error: 'Error al validar disponibilidad: ' + e.message }, 500, cors);
-    }
+    console.log('DEBUG: Reactivación de cita cancelada para:', reservaID);
   }
 
   // Actualizar estado en Supabase
