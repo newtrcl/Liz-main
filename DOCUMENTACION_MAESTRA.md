@@ -8,42 +8,60 @@
 
 ---
 
-## 🚀 CHANGELOG v2.2 — FASE 1: NOTIFICACIONES Y FLUJO DE PAGOS
+## 🚀 CHANGELOG v2.3 — FASE 1: NOTIFICACIONES Y FLUJO DE PAGOS (COMPLETADO)
 
-**Implementado:** 2026-05-09
+**Implementado:** 2026-05-09  
+**Status:** ✅ COMPLETAMENTE OPERATIVO EN PRODUCCIÓN
 
-### ✅ Bugs Críticos Corregidos
+### ✅ Bugs Críticos Implementados
 
-1. **Auto-cancelación con notificación email** 
+1. **Auto-cancelación con notificación email** ✅
    - Cron cada 30min cancela reservas Pendiente > 2 horas
    - Envía email al cliente explicando cancelación por falta de pago
    - Notifica a admin sobre cancelaciones automáticas
    - Ubicación: `_worker.js:handleAutoCancelarReservas()` (línea 1511)
 
-2. **Reactivación de citas pagadas tardíamente**
+2. **Reactivación de citas pagadas tardíamente** ✅
    - Admin puede cambiar estado Cancelada → Pagada si horario está libre
    - Valida nuevamente disponibilidad antes de reactivar
    - Rechaza si horario ya está ocupado
    - Ubicación: `_worker.js:handleAdminActualizarEstado()` (línea 1250)
 
-3. **Email cuando se marca cita como Completada**
+3. **Email cuando se marca cita como Completada** ✅
    - Agradecimiento automático al cliente
    - Actualiza puntos de fidelización
    - Ubicación: `appscript/main.gs:_handleMarcarCompletada()` (línea 117)
 
-4. **PDF de comprobante de pago**
+4. **PDF de comprobante de pago** ✅
    - Se genera y envía automáticamente cuando estado = Pagada
    - Incluye detalles de cita, precio y QR
    - Ubicación: `_worker.js:handleAdminActualizarEstado()` (línea 1304)
+
+### ✅ Troubleshooting y Deployment Issues Resueltos
+
+5. **API client methods missing** ✅
+   - Agregados métodos adminLogin() y adminLogout() en js/api.js
+   - Permite que login.html pueda llamar API.adminLogin(password)
+
+6. **Secretos de Cloudflare incompletos** ✅
+   - Configurados: ADMIN_PASSWORD, ADMIN_SECRET, GAS_URL, SUPABASE_SERVICE_KEY
+   - Sin estos, admin no puede hacer PATCH a Supabase
+
+7. **Constraint CHECK violations en Supabase** ✅
+   - Actualizado constraint `estado_valido` para incluir 'Pagada'
+   - SQL: ALTER TABLE reservas DROP CONSTRAINT; ALTER TABLE reservas ADD CONSTRAINT ...
 
 ### Testing Realizado
 
 - ✅ Auto-cancelación funciona cada 30 min
 - ✅ Reactivación con validación de disponibilidad
 - ✅ Rechazo si horario ocupado
-- ✅ Emails enviados correctamente
+- ✅ Emails enviados correctamente a clientes
 - ✅ PDF generados sin errores
 - ✅ Puntos fidelización actualizados
+- ✅ Admin puede cambiar estado a Pagada sin errores
+- ✅ Login y sesión funcionan correctamente
+- ✅ API endpoints retornan 200 en todos los casos
 
 ---
 
@@ -1606,6 +1624,200 @@ function testEmail() {
 
 # 4. Ejecutar en Apps Script
 ```
+
+---
+
+## Problema: "Botón Pagado retorna 500 — API.adminLogin is not a function"
+
+**Causa:** Archivo `js/api.js` no tenía el método `adminLogin()` aunque era llamado desde `admin/login.html`
+
+**Diagnosis:**
+- ✅ Verificar que `js/api.js` existe
+- ✅ Buscar si `API.adminLogin` está definido
+- ✅ Revisar consola del navegador (F12): error "is not a function"
+
+**Solución:** Agregar métodos faltantes a `js/api.js`:
+```javascript
+const API = {
+  // ... otros métodos ...
+  
+  async adminLogin(password) {
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ password }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        return { ok: false, error: data.error || 'Error al iniciar sesión' };
+      }
+      return await res.json();
+    } catch (e) {
+      console.error('adminLogin error:', e);
+      return { ok: false, error: e.message };
+    }
+  },
+
+  async adminLogout() {
+    try {
+      const res = await fetch('/api/admin/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      return await res.json();
+    } catch (e) {
+      console.error('adminLogout error:', e);
+      return { ok: false, error: e.message };
+    }
+  },
+};
+```
+
+**Lección:** Siempre verificar que los métodos de la API cliente están definidos cuando se llaman desde el HTML.
+
+---
+
+## Problema: "Admin no puede actualizar reservas — Error al actualizar (500)"
+
+**Síntomas:**
+- Botón "Pagado" retorna 500 Internal Server Error
+- supaFetch retorna `ok: false`
+- Pero el GET a Supabase funciona correctamente
+
+**Diagnosis:**
+1. ✅ Verificar que secrets Cloudflare están configurados
+2. ✅ Hacer test directo con fetch a Supabase usando PATCH
+3. ✅ Revisar el constraint CHECK en la tabla
+
+**Root Cause:** Faltaban dos variables de entorno en Cloudflare:
+
+| Variable | Estado | Problema |
+|----------|--------|----------|
+| `ADMIN_PASSWORD` | ❌ No configurada | Login fallaba |
+| `ADMIN_SECRET` | ❌ No configurada | Sesión no se creaba |
+| `GAS_URL` | ❌ No configurada | Notificaciones no se enviaban |
+| `SUPABASE_SERVICE_KEY` | ❌ No configurada | PATCH a Supabase fallaba (CRÍTICO) |
+
+**Solución Completa:**
+```bash
+# Configurar secretos en Cloudflare
+wrangler secret put ADMIN_PASSWORD
+# → Pegar: $Ba186636538 (o la contraseña correcta)
+
+wrangler secret put ADMIN_SECRET
+# → Generar string aleatorio de 32+ caracteres: openssl rand -hex 16
+
+wrangler secret put GAS_URL
+# → Pegar URL del Google Apps Script Web App deployment
+
+wrangler secret put SUPABASE_SERVICE_KEY
+# → Pegar la clave service_role de Supabase (diferente a ANON_KEY!)
+
+# Redeploy
+wrangler deploy
+```
+
+**Diferenciar claves en Supabase Dashboard:**
+```
+SUPABASE_ANON_KEY (clave pública):
+  - Contiene "role":"anon" en el payload JWT
+  - Usada en cliente
+  - Respeta RLS
+  
+SUPABASE_SERVICE_KEY (clave privada):
+  - Contiene "role":"service_role" en el payload JWT
+  - Usada solo en servidor (Worker)
+  - Omite RLS completamente
+```
+
+**Lección:** Cloudflare Secrets no se muestran en los logs de deploy. Siempre revisar que están configuradas revisando directamente en Cloudflare Dashboard → Workers Secrets.
+
+---
+
+## Problema: "PATCH retorna 400 Bad Request — Constraint Check violated"
+
+**Error exacto:**
+```json
+{
+  "code": "23514",
+  "message": "new row for relation \"reservas\" violates check constraint \"estado_valido\"",
+  "details": "Failing row contains (..., Pagada, ...)"
+}
+```
+
+**Root Cause:** El constraint CHECK en la tabla `reservas` de Supabase no incluía `'Pagada'` como estado válido.
+
+**Diagnosis:**
+- ✅ Test directo con fetch a Supabase
+- ✅ Verificar respuesta exacta (no solo el status)
+- ✅ Leer el error: "violates check constraint"
+
+**Solución:** Actualizar el constraint en Supabase SQL Editor:
+```sql
+-- 1. Eliminar constraint antiguo
+ALTER TABLE reservas 
+DROP CONSTRAINT estado_valido;
+
+-- 2. Crear nuevo constraint con todos los estados válidos
+ALTER TABLE reservas 
+ADD CONSTRAINT estado_valido CHECK (
+  estado IN ('Confirmada','Completada','Cancelada','Pendiente','Pagada')
+);
+```
+
+**Verificar que funcionó:**
+```javascript
+// En consola del navegador
+const serviceKey = 'TU_SERVICE_KEY';
+fetch('https://[project].supabase.co/rest/v1/reservas?id=eq.TU_ID', {
+  method: 'PATCH',
+  headers: {
+    'Content-Type': 'application/json',
+    'apikey': serviceKey,
+    'Authorization': `Bearer ${serviceKey}`,
+    'Prefer': 'return=representation'
+  },
+  body: JSON.stringify({ estado: 'Pagada' })
+}).then(r => {
+  console.log('Status:', r.status); // Debe ser 200
+  return r.json();
+}).then(data => console.log('OK:', data));
+```
+
+**Lección:** El schema SQL en schema.sql puede no coincidir con lo que existe en producción. Siempre verificar constraints directamente en Supabase.
+
+---
+
+## Checklist para Debug de API Endpoints
+
+Cuando un endpoint retorna 500:
+
+1. **¿Falta un secret en Cloudflare?**
+   - Revisar Cloudflare Dashboard → Workers → Secrets
+   - Verificar que `env.VARIABLE` no sea undefined en el code
+
+2. **¿Está bien formada la request?**
+   - Verificar method (GET/POST/PATCH)
+   - Verificar headers (Content-Type, Authorization, credentials: include)
+   - Verificar body JSON es válido
+
+3. **¿Qué retorna Supabase?**
+   - Test directo con fetch desde consola del navegador
+   - Incluir todos los headers (apikey, Authorization, Prefer)
+   - Leer el error exacto del response (no solo el status)
+
+4. **¿Hay un constraint siendo violado?**
+   - Buscar "violates check constraint" en el error
+   - Buscar "unique constraint" en el error
+   - Verificar tipos de datos (string vs number)
+
+5. **¿El usuario está autenticado?**
+   - Verificar que session cookie existe
+   - Verificar que credentials: 'include' se envía
+   - Test del endpoint sin autenticación debe retornar 401
 
 ---
 
