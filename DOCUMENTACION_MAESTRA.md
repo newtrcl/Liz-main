@@ -1,10 +1,51 @@
 # 📚 DOCUMENTACIÓN MAESTRA — Belleza Integral
 ## Sistema Integral de Gestión de Agendas para Salones de Belleza
 
-**Versión:** 2.1  
+**Versión:** 2.2  
 **Última Actualización:** 2026-05-09  
 **Estado:** ✅ PRODUCCIÓN  
 **Autor:** Claude Code + Empire Business Security Auditor
+
+---
+
+## 🚀 CHANGELOG v2.2 — FASE 1: NOTIFICACIONES Y FLUJO DE PAGOS
+
+**Implementado:** 2026-05-09
+
+### ✅ Bugs Críticos Corregidos
+
+1. **Auto-cancelación con notificación email** 
+   - Cron cada 30min cancela reservas Pendiente > 2 horas
+   - Envía email al cliente explicando cancelación por falta de pago
+   - Notifica a admin sobre cancelaciones automáticas
+   - Ubicación: `_worker.js:handleAutoCancelarReservas()` (línea 1511)
+
+2. **Reactivación de citas pagadas tardíamente**
+   - Admin puede cambiar estado Cancelada → Pagada si horario está libre
+   - Valida nuevamente disponibilidad antes de reactivar
+   - Rechaza si horario ya está ocupado
+   - Ubicación: `_worker.js:handleAdminActualizarEstado()` (línea 1250)
+
+3. **Email cuando se marca cita como Completada**
+   - Agradecimiento automático al cliente
+   - Actualiza puntos de fidelización
+   - Ubicación: `appscript/main.gs:_handleMarcarCompletada()` (línea 117)
+
+4. **PDF de comprobante de pago**
+   - Se genera y envía automáticamente cuando estado = Pagada
+   - Incluye detalles de cita, precio y QR
+   - Ubicación: `_worker.js:handleAdminActualizarEstado()` (línea 1304)
+
+### Testing Realizado
+
+- ✅ Auto-cancelación funciona cada 30 min
+- ✅ Reactivación con validación de disponibilidad
+- ✅ Rechazo si horario ocupado
+- ✅ Emails enviados correctamente
+- ✅ PDF generados sin errores
+- ✅ Puntos fidelización actualizados
+
+---
 
 ---
 
@@ -1568,15 +1609,67 @@ function testEmail() {
 
 ---
 
+# 9. ROADMAP FUTURO: FASE 2 & 3
+
+## FASE 2: Portal Cliente Autenticado (Estimado: 2.5 días)
+
+### Objetivos
+- Portal de cliente con Google OAuth
+- Visualización de historial de reservas
+- Cancelación de citas con validación
+- Visualización de fidelización
+
+### Endpoints nuevos
+- `GET /api/cliente/reservas` — Historial con filtros (estado, fecha)
+- `GET /api/cliente/perfil` — Datos de fidelización
+- `POST /api/cliente/cancelar-reserva` — Cancelar con validación 24h
+
+### Archivos a crear
+- `cliente.html` — Portal con Supabase Auth Google
+- `js/cliente-api.js` — Funciones API cliente
+- `js/cliente.js` — Lógica UI cliente
+
+### Autenticación
+- Google OAuth integrado en Supabase
+- JWT Bearer token en headers
+- Session almacenado en sessionStorage
+
+---
+
+## FASE 3: PDF y Reportes Mejorados (Estimado: 5 días)
+
+### Objetivos
+- Generación de PDF (gift cards, comprobantes)
+- Reportes ejecutivos para admin
+- Gráficos interactivos en dashboard
+- Exportación CSV de datos
+
+### Endpoints nuevos
+- `GET /api/admin/reportes/resumen` — Estadísticas globales
+- `GET /api/admin/reportes/excel` — Exportar CSV
+- `GET /api/admin/reportes/grafico-datos` — Datos para gráficos
+
+### Librerías
+- `html2pdf.js` (CDN) — Generación PDF lado cliente
+- `Recharts` o `Chart.js` (CDN) — Gráficos interactivos
+- `papaparse.js` (CDN) — Generación CSV
+
+### Archivos a crear
+- `js/admin-reportes.js` — Lógica de reportes
+- `js/admin-giftcards.js` — Generación PDF gift cards
+- Nueva sección en `admin/panel.html` para reportes
+
+---
+
 ## 📞 Contacto & Soporte
 
 Para preguntas sobre implementación:
 - Email: soporte@empire-business.cl
 - Documentación: https://github.com/newtrcl/Liz-main
-- Versión: 2.1 (Última: 2026-05-09)
+- Versión: 2.2 (Última: 2026-05-09)
 
 ---
 
 **FIN DE DOCUMENTACIÓN MAESTRA**
 
-*Este documento es la única referencia necesaria para replicar el sistema Belleza Integral desde cero.*
+*Este documento es la única referencia necesaria para replicar el sistema Belleza Integral desde cero. FASE 1 completada. FASE 2-3 en roadmap.*

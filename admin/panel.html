@@ -413,13 +413,241 @@ textarea.form-ctrl { height: 72px; padding: 8px 10px; resize: vertical; }
 
 /* ── RESPONSIVE ──────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .sidebar { display: none; }
-  .stats-row { grid-template-columns: repeat(2, 1fr); }
-  .form-row { grid-template-columns: 1fr; }
-  .detail-grid { grid-template-columns: 1fr; }
-  .detail-cell:nth-child(2n) { border-right: 1px solid var(--border); }
-  .detail-cell:nth-last-child(-n+2) { border-bottom: 1px solid var(--border); }
-  .detail-cell:last-child { border-bottom: none; }
+  /* LAYOUT MOBILE */
+  .layout { flex-direction: column; height: 100vh; }
+
+  /* SIDEBAR: Convertir a drawer/modal */
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 56px;
+    width: 100%;
+    max-width: 280px;
+    height: calc(100vh - 56px);
+    background: #1e1b2e;
+    z-index: 400;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar.open { transform: translateX(0); }
+
+  /* MAIN CONTENT */
+  .main {
+    width: 100%;
+    height: 100vh;
+  }
+
+  /* TOPBAR: Hacer más compacto */
+  .topbar {
+    height: 56px;
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .topbar-title {
+    font-size: 14px;
+    flex: 1;
+  }
+
+  .topbar-date {
+    display: none;
+  }
+
+  /* CONTENT */
+  .content {
+    padding: 16px;
+  }
+
+  /* GRILLAS RESPONSIVE */
+  .stats-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .stat-box {
+    padding: 12px 14px;
+  }
+
+  .stat-val {
+    font-size: 20px;
+  }
+
+  .stat-lbl {
+    font-size: 10px;
+  }
+
+  /* FORMS */
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .form-label {
+    font-size: 11px;
+    margin-bottom: 4px;
+  }
+
+  .form-ctrl {
+    height: 32px;
+    font-size: 12px;
+  }
+
+  textarea.form-ctrl {
+    height: 60px;
+  }
+
+  /* DETAIL GRID */
+  .detail-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .detail-cell {
+    padding: 8px 10px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .detail-cell:nth-child(2n) {
+    border-right: none;
+  }
+
+  .detail-cell:last-child {
+    border-bottom: none;
+  }
+
+  /* BUTTONS */
+  .btn {
+    height: 32px;
+    padding: 0 12px;
+    font-size: 12px;
+  }
+
+  .btn-sm {
+    height: 28px;
+    padding: 0 8px;
+  }
+
+  /* FILTERS */
+  .filters-bar {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .filter-input,
+  .filter-select {
+    width: 100%;
+    height: 32px;
+    font-size: 12px;
+  }
+
+  /* MODALES */
+  .modal-box {
+    max-width: 95vw;
+    max-height: 85vh;
+  }
+
+  .modal-head {
+    padding: 12px 16px;
+  }
+
+  .modal-content {
+    padding: 16px;
+  }
+
+  .modal-foot {
+    padding: 12px 16px;
+    flex-direction: column;
+  }
+
+  .modal-foot .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* TABLAS */
+  table.tbl {
+    font-size: 12px;
+  }
+
+  table.tbl th {
+    font-size: 10px;
+    padding: 8px 6px;
+  }
+
+  table.tbl td {
+    padding: 8px 6px;
+    font-size: 12px;
+  }
+
+  /* AGENDA KANBAN */
+  .agenda-cols {
+    gap: 8px;
+  }
+
+  .agenda-col {
+    flex: 0 0 150px;
+  }
+
+  .agenda-card {
+    padding: 8px 10px;
+    margin-bottom: 6px;
+  }
+
+  /* TOAST: Más pequeño en mobile */
+  .toast {
+    max-width: calc(100vw - 40px);
+    right: 20px;
+    left: 20px;
+    font-size: 12px;
+    padding: 10px 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* EXTRA SMALL SCREENS */
+  .sidebar {
+    max-width: 100%;
+  }
+
+  .content {
+    padding: 12px;
+  }
+
+  .stats-row {
+    gap: 8px;
+  }
+
+  .topbar {
+    padding: 0 8px;
+    height: 48px;
+  }
+
+  .btn {
+    height: 28px;
+    padding: 0 10px;
+    font-size: 11px;
+  }
+
+  .modal-overlay {
+    padding: 10px;
+  }
+
+  /* Overlay para sidebar en mobile */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 56px 0 0 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 399;
+  }
+
+  .sidebar-overlay.show {
+    display: block;
+  }
 }
 </style>
 </head>
@@ -476,12 +704,20 @@ textarea.form-ctrl { height: 72px; padding: 8px 10px; resize: vertical; }
   <!-- MAIN -->
   <div class="main">
     <div class="topbar">
+      <!-- TOGGLE SIDEBAR (Mobile) -->
+      <button class="btn btn-ghost btn-sm" id="sidebar-toggle" onclick="toggleSidebar()" style="display:none;margin-right:-6px">
+        <span class="material-symbols-outlined" style="font-size:20px">menu</span>
+      </button>
+
       <span class="topbar-title" id="topbar-title">Dashboard</span>
       <span class="topbar-date" id="topbar-date"></span>
       <button class="btn btn-ghost btn-sm" onclick="recargar()">
         <span class="material-symbols-outlined" style="font-size:15px">refresh</span> Actualizar
       </button>
     </div>
+
+    <!-- Overlay para sidebar móvil -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
     <div class="content" id="main-content">
       <!-- Views se renderizan aquí dinámicamente -->
@@ -1518,6 +1754,162 @@ function fmtFechaLarga(str) {
   const f = new Date(str + 'T12:00:00');
   return `${dias[f.getDay()]}, ${f.getDate()} de ${meses[f.getMonth()]} ${f.getFullYear()}`;
 }
+
+// ════════════════════════════════════════════════════════════
+// RESPONSIVE: Toggle Sidebar en Mobile
+// ════════════════════════════════════════════════════════════
+function toggleSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+
+  if (sidebar) {
+    sidebar.classList.toggle('open');
+    overlay?.classList.toggle('show');
+  }
+}
+
+// Cerrar sidebar al seleccionar un item en mobile
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    if (window.innerWidth <= 768) {
+      const sidebar = document.querySelector('.sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      sidebar?.classList.remove('open');
+      overlay?.classList.remove('show');
+    }
+  });
+});
+
+// Mostrar/ocultar toggle button según tamaño de pantalla
+function actualizarToggleSidebar() {
+  const toggle = document.getElementById('sidebar-toggle');
+  if (toggle) {
+    toggle.style.display = window.innerWidth <= 768 ? 'inline-flex' : 'none';
+  }
+}
+
+window.addEventListener('resize', actualizarToggleSidebar);
+window.addEventListener('load', actualizarToggleSidebar);
+
+// ════════════════════════════════════════════════════════════
+// WHATSAPP: Integración con Limpieza de Números Telefónicos
+// ════════════════════════════════════════════════════════════
+
+/**
+ * Limpia y formatea número telefónico para WhatsApp
+ * Acepta formatos: 912345678, 56912345678, +56912345678
+ * Retorna: 56912345678 (para usar en wa.me)
+ */
+function formatearParaWhatsApp(telefono) {
+  if (!telefono) return null;
+
+  // Remover espacios, guiones, paréntesis
+  let cleaned = telefono.trim().replace(/[\s\-\(\)]/g, '');
+
+  // Si comienza con +, remover el +
+  if (cleaned.startsWith('+')) {
+    cleaned = cleaned.substring(1);
+  }
+
+  // Si comienza con 56, dejarlo como está
+  if (cleaned.startsWith('56')) {
+    return cleaned;
+  }
+
+  // Si comienza con 9 (número local sin prefijo), agregar 56
+  if (cleaned.match(/^9\d{8}$/)) {
+    return '56' + cleaned;
+  }
+
+  // Si tiene 9 dígitos (número local sin 56), agregar 569
+  if (cleaned.match(/^\d{8}$/) && cleaned.startsWith('9')) {
+    return '56' + cleaned;
+  }
+
+  // Fallback: si no comienza con 56, agregarlo
+  if (!cleaned.startsWith('56')) {
+    return '56' + cleaned;
+  }
+
+  return cleaned;
+}
+
+/**
+ * Abre WhatsApp Web o App con el número formateado
+ */
+function abrirWhatsApp(telefono) {
+  const formatted = formatearParaWhatsApp(telefono);
+
+  if (!formatted) {
+    toast('Número de teléfono inválido', 'error');
+    return;
+  }
+
+  // URL de WhatsApp Web (wa.me)
+  const whatsappUrl = `https://wa.me/${formatted}`;
+
+  // Abrir en nueva pestaña/ventana
+  window.open(whatsappUrl, '_blank');
+
+  console.log(`[WhatsApp] Abriendo: ${whatsappUrl}`);
+}
+
+/**
+ * Versión mejorada de verDetalle que incluye botón WhatsApp
+ * Esta función reemplaza la anterior
+ */
+async function verDetalleConWhatsApp(reservaID) {
+  // Llamar función original
+  verDetalle(reservaID);
+
+  // Agregar botón WhatsApp después de que el modal se abre
+  setTimeout(() => {
+    const foot = document.getElementById('modal-detalle-foot');
+    if (foot) {
+      const r = (S.data?.reservasHoy || S.reservas || []).find(x => x.id === reservaID);
+      if (r && r.telefono) {
+        const whatsappBtn = document.createElement('button');
+        whatsappBtn.className = 'btn btn-sm btn-primary';
+        whatsappBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px">chat</span> WhatsApp';
+        whatsappBtn.onclick = () => abrirWhatsApp(r.telefono);
+        whatsappBtn.title = `Enviar mensaje a ${r.telefono}`;
+
+        // Insertar al inicio del footer
+        foot.insertBefore(whatsappBtn, foot.firstChild);
+      }
+    }
+  }, 100);
+}
+
+// Agregar botón WhatsApp directo en el modal de detalle
+// Reemplazar la linea: addBtn('📄 Comprobante', 'btn-ghost', () => descargarPDFComprobante(r));
+// Por: addBtn('💬 WhatsApp', 'btn-primary', () => abrirWhatsApp(r.telefono));
+// O mejor aún, modificar verDetalle para agregar el botón automáticamente
+
+// Modificación de la función verDetalle existente
+const originalVerDetalle = verDetalle;
+verDetalle = function(reservaID) {
+  originalVerDetalle.call(this, reservaID);
+
+  // Agregar botón WhatsApp
+  setTimeout(() => {
+    const foot = document.getElementById('modal-detalle-foot');
+    if (foot) {
+      const r = (S.data?.reservasHoy || S.reservas || []).find(x => x.id === reservaID);
+      if (r && r.telefono) {
+        const whatsappBtn = document.createElement('button');
+        whatsappBtn.className = 'btn btn-sm btn-primary';
+        whatsappBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px">chat</span> WhatsApp';
+        whatsappBtn.style.marginRight = 'auto';
+        whatsappBtn.onclick = () => abrirWhatsApp(r.telefono);
+        whatsappBtn.title = `+${formatearParaWhatsApp(r.telefono)}`;
+
+        // Insertar al inicio del footer
+        foot.insertBefore(whatsappBtn, foot.firstChild);
+      }
+    }
+  }, 100);
+};
 </script>
 
 <!-- html2pdf.js para generación de PDFs (Phase 3) -->
