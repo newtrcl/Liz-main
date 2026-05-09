@@ -1248,31 +1248,42 @@ async function handleAdminActualizarEstado(env, cors, request, ctx) {
 
   // [AUDIT:reactivacion-pago] Validar si cambio es Cancelada → Pagada (pago retardado)
   if (estadoAnterior === 'Cancelada' && estado === 'Pagada') {
-    // Revalidar que el slot sigue disponible
-    const [resR, bloqR] = await Promise.all([
-      supaFetch(env,
-        `reservas?fecha=eq.${reserva.fecha}&empleado_id=eq.${encodeURIComponent(reserva.empleado_id)}&estado=neq.Cancelada&id=neq.${encodeURIComponent(reservaID)}&select=hora_inicio,hora_fin`
-      ),
-      supaFetch(env,
-        `bloqueos?fecha=eq.${reserva.fecha}&empleado_id=eq.${encodeURIComponent(reserva.empleado_id)}&expires_at=gt.${new Date().toISOString()}&select=hora_inicio,hora_fin`
-      ),
-    ]);
+    try {
+      // Revalidar que el slot sigue disponible
+      const [resR, bloqR] = await Promise.all([
+        supaFetch(env,
+          `reservas?fecha=eq.${reserva.fecha}&empleado_id=eq.${encodeURIComponent(reserva.empleado_id)}&estado=neq.Cancelada&id=neq.${encodeURIComponent(reservaID)}&select=hora_inicio,hora_fin`
+        ),
+        supaFetch(env,
+          `bloqueos?fecha=eq.${reserva.fecha}&empleado_id=eq.${encodeURIComponent(reserva.empleado_id)}&expires_at=gt.${new Date().toISOString()}&select=hora_inicio,hora_fin`
+        ),
+      ]);
 
-    const ocupados = [...(resR.data || []), ...(bloqR.data || [])];
-    const startMin = horaAMin(reserva.hora_inicio);
-    const duracion = reserva.duracion || 60;
-    const endMin = startMin + duracion;
+      if (!resR.ok || !bloqR.ok) {
+        console.error('Availability check failed:', { resR: resR.ok, bloqR: bloqR.ok });
+        return json({ ok: false, error: 'Error al validar disponibilidad' }, 500, cors);
+      }
 
-    const conflicto = ocupados.some(r =>
-      startMin < horaAMin(r.hora_fin) && endMin > horaAMin(r.hora_inicio)
-    );
+      const ocupados = [...(resR.data || []), ...(bloqR.data || [])];
+      const startMin = horaAMin(reserva.hora_inicio);
+      const duracion = reserva.duracion || 60;
+      const endMin = startMin + duracion;
 
-    if (conflicto) {
-      return json({
-        ok: false,
-        error: 'No se puede reactivar: el horario ya está ocupado. Sugerir al cliente otro horario.',
-        code: 'SLOT_CONFLICT'
-      }, 409, cors);
+      const conflicto = ocupados.some(r =>
+        r.hora_inicio && r.hora_fin &&
+        startMin < horaAMin(r.hora_fin) && endMin > horaAMin(r.hora_inicio)
+      );
+
+      if (conflicto) {
+        return json({
+          ok: false,
+          error: 'No se puede reactivar: el horario ya está ocupado. Sugerir al cliente otro horario.',
+          code: 'SLOT_CONFLICT'
+        }, 409, cors);
+      }
+    } catch (e) {
+      console.error('Availability check error:', e.message);
+      return json({ ok: false, error: 'Error al validar disponibilidad: ' + e.message }, 500, cors);
     }
   }
 
@@ -1286,72 +1297,80 @@ async function handleAdminActualizarEstado(env, cors, request, ctx) {
   // Disparar notificación apropiada según nuevo estado
   if (estado === 'Pagada') {
     // Email de confirmación al cliente (nuevo pago o reactivación)
-    ctx.waitUntil(notificarGAS(env, 'confirmarPago', {
-      payload: {
-        reservaID: reserva.id,
-        nombre: reserva.nombre,
-        email: reserva.email,
-        telefono: reserva.telefono,
-        servicioNombre: reserva.servicio_nombre,
-        empleadoNombre: reserva.empleado_nombre,
-        fecha: reserva.fecha,
-        horaInicio: reserva.hora_inicio,
-        horaFin: reserva.hora_fin,
-        precio: reserva.precio,
-      },
-    }));
+    if (ctx && ctx.waitUntil) {
+      ctx.waitUntil(notificarGAS(env, 'confirmarPago', {
+        payload: {
+          reservaID: reserva.id,
+          nombre: reserva.nombre,
+          email: reserva.email,
+          telefono: reserva.telefono,
+          servicioNombre: reserva.servicio_nombre,
+          empleadoNombre: reserva.empleado_nombre,
+          fecha: reserva.fecha,
+          horaInicio: reserva.hora_inicio,
+          horaFin: reserva.hora_fin,
+          precio: reserva.precio,
+        },
+      }));
 
-    // [AUDIT:pdf-recibo] Generar y enviar PDF de comprobante cuando se marca Pagada
-    ctx.waitUntil(notificarGAS(env, 'generarReciboPDF', {
-      payload: {
-        reservaID: reserva.id,
-        nombre: reserva.nombre,
-        email: reserva.email,
-        telefono: reserva.telefono,
-        servicioNombre: reserva.servicio_nombre,
-        empleadoNombre: reserva.empleado_nombre,
-        fecha: reserva.fecha,
-        horaInicio: reserva.hora_inicio,
-        horaFin: reserva.hora_fin,
-        precio: parseFloat(reserva.precio || 0),
-      },
-    }));
+      // [AUDIT:pdf-recibo] Generar y enviar PDF de comprobante cuando se marca Pagada
+      ctx.waitUntil(notificarGAS(env, 'generarReciboPDF', {
+        payload: {
+          reservaID: reserva.id,
+          nombre: reserva.nombre,
+          email: reserva.email,
+          telefono: reserva.telefono,
+          servicioNombre: reserva.servicio_nombre,
+          empleadoNombre: reserva.empleado_nombre,
+          fecha: reserva.fecha,
+          horaInicio: reserva.hora_inicio,
+          horaFin: reserva.hora_fin,
+          precio: parseFloat(reserva.precio || 0),
+        },
+      }));
+    } else {
+      console.warn('ctx.waitUntil not available, notifications may not be sent');
+    }
   } else if (estado === 'Completada') {
-    // [AUDIT:fidelizacion-completada] Sumar puntos de fidelización solo cuando se marca Completada
-    ctx.waitUntil(actualizarFidelizacion(env, {
-      nombre: reserva.nombre,
-      email: reserva.email,
-      telefono: reserva.telefono,
-      precio: parseFloat(reserva.precio || 0),
-    }));
-
-    // Email de agradecimiento al cliente
-    ctx.waitUntil(notificarGAS(env, 'marcarCompletada', {
-      payload: {
-        reservaID: reserva.id,
-        nombre: reserva.nombre,
-        email: reserva.email,
-        servicioNombre: reserva.servicio_nombre,
-        fecha: reserva.fecha,
-      },
-    }));
-  } else if (estado === 'Cancelada' && estadoAnterior !== 'Cancelada') {
-    // Email de cancelación (admin cambió a Cancelada)
-    ctx.waitUntil(notificarGAS(env, 'cancelarReserva', {
-      reservaID: reserva.id,
-      canceladoPor: 'admin',
-      payload: {
-        reservaID: reserva.id,
+    if (ctx && ctx.waitUntil) {
+      // [AUDIT:fidelizacion-completada] Sumar puntos de fidelización solo cuando se marca Completada
+      ctx.waitUntil(actualizarFidelizacion(env, {
         nombre: reserva.nombre,
         email: reserva.email,
         telefono: reserva.telefono,
-        servicioNombre: reserva.servicio_nombre,
-        empleadoNombre: reserva.empleado_nombre,
-        fecha: reserva.fecha,
-        horaInicio: reserva.hora_inicio,
-        horaFin: reserva.hora_fin,
-      },
-    }));
+        precio: parseFloat(reserva.precio || 0),
+      }));
+
+      // Email de agradecimiento al cliente
+      ctx.waitUntil(notificarGAS(env, 'marcarCompletada', {
+        payload: {
+          reservaID: reserva.id,
+          nombre: reserva.nombre,
+          email: reserva.email,
+          servicioNombre: reserva.servicio_nombre,
+          fecha: reserva.fecha,
+        },
+      }));
+    }
+  } else if (estado === 'Cancelada' && estadoAnterior !== 'Cancelada') {
+    if (ctx && ctx.waitUntil) {
+      // Email de cancelación (admin cambió a Cancelada)
+      ctx.waitUntil(notificarGAS(env, 'cancelarReserva', {
+        reservaID: reserva.id,
+        canceladoPor: 'admin',
+        payload: {
+          reservaID: reserva.id,
+          nombre: reserva.nombre,
+          email: reserva.email,
+          telefono: reserva.telefono,
+          servicioNombre: reserva.servicio_nombre,
+          empleadoNombre: reserva.empleado_nombre,
+          fecha: reserva.fecha,
+          horaInicio: reserva.hora_inicio,
+          horaFin: reserva.hora_fin,
+        },
+      }));
+    }
   } else {
     // Cambio genérico (sin email especial)
     ctx.waitUntil(notificarGAS(env, 'actualizarEstado', { params: { reservaID, estado } }));
