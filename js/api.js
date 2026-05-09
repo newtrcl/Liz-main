@@ -80,6 +80,21 @@ const API = {
       credentials: 'same-origin',
     }),
 
+  // ── Phase 3: Reportes mejorados ──────────────────────────────
+  getReportesResumen: (desde, hasta) =>
+    apiFetch(`/api/admin/reportes/resumen?desde=${encodeURIComponent(desde)}&hasta=${encodeURIComponent(hasta)}`, {
+      credentials: 'same-origin',
+    }),
+
+  getReportesGraficos: (desde, hasta) =>
+    apiFetch(`/api/admin/reportes/grafico-datos?desde=${encodeURIComponent(desde)}&hasta=${encodeURIComponent(hasta)}`, {
+      credentials: 'same-origin',
+    }),
+
+  descargarReportesExcel: (desde, hasta) => {
+    window.location.href = `/api/admin/reportes/excel?desde=${encodeURIComponent(desde)}&hasta=${encodeURIComponent(hasta)}`;
+  },
+
   actualizarEstado: (reservaID, estado) =>
     apiFetch('/api/admin/reservas/estado', {
       method:      'POST',
