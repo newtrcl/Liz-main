@@ -238,6 +238,41 @@ function enviarConfirmacionCompletada(p) {
   } catch(e) { log("ERROR","enviarConfirmacionCompletada",p.reservaID||"",p.email,{},e.message); }
 }
 
+// [AUDIT:pdf-recibo] Email con comprobante de pago (PDF embedded/attachment)
+function enviarReciboPDF(p) {
+  if (!p.email) return;
+  var precioFmt = "$" + parseFloat(p.precio||0).toLocaleString("es-CL") + " CLP";
+  var filas = [
+    ["Servicio",    _esc(p.servicioNombre)],
+    ["Especialista",_esc(p.empleadoNombre)],
+    ["Fecha",       _fmtFecha(p.fecha)],
+    ["Horario",     _esc(p.horaInicio) + " – " + _esc(p.horaFin)],
+    ["Precio",      "<strong style='color:" + COLOR_PRIMARY + ";'>" + precioFmt + "</strong>"],
+  ];
+
+  var cuerpo =
+    "<p style='font-size:15px;color:#374151;margin:0 0 8px'>Hola, <strong>" + _esc(p.nombre) + "</strong> 👋</p>" +
+    "<p style='font-size:14px;color:#6b7280;line-height:1.6;margin:0 0 16px'>Tu pago ha sido procesado correctamente. Adjuntamos tu comprobante de reserva.</p>" +
+    "<table cellpadding='0' cellspacing='0' border='0'><tr>" +
+      "<td style='background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:8px 14px;'>" +
+        "<span style='font-size:13px;font-weight:700;color:#16a34a;'>✅ &nbsp;Pago confirmado</span>" +
+      "</td>" +
+    "</tr></table>" +
+    _detalleTabla(filas) +
+    "<p style='margin:20px 0 0;font-size:13px;color:#9ca3af;text-align:center;'>Tu comprobante se encuentra en el archivo adjunto. Si tienes dudas, responde este email.</p>";
+
+  var html = _xhtmlEnvelope("Comprobante de Reserva", cuerpo, COLOR_PRIMARY);
+  try {
+    MailApp.sendEmail({
+      to:p.email,
+      subject:"📄 Tu comprobante de reserva — " + NEGOCIO_NOMBRE,
+      htmlBody:html,
+      name:NEGOCIO_NOMBRE,
+      replyTo:NEGOCIO_EMAIL
+    });
+  } catch(e) { log("ERROR","enviarReciboPDF",p.reservaID||"",p.email,{},e.message); }
+}
+
 // ═══════════════════════════════════════════════════════════════
 // NOTIFICACIÓN ADMIN
 // ═══════════════════════════════════════════════════════════════
