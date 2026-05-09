@@ -178,22 +178,109 @@ async function verificarCookie(request, env) {
 
 // ── SUPABASE AUTH CLIENTE ──────────────────────────────────────
 
-async function verificarTokenSupabase(token) {
-  if (!token) return null;
+// [SECURITY] Validar JWT contra JWKS de Supabase (CVE-2025-29927 mitigation)
+const jwksCache = new Map();
+const JWKS_TTL = 3600; // 1 hora
+
+async function obtenerJWKS(supabaseUrl) {
+  const cacheKey = supabaseUrl;
+  const cached = jwksCache.get(cacheKey);
+
+  if (cached && Date.now() - cached.timestamp < JWKS_TTL * 1000) {
+    return cached.data;
+  }
 
   try {
-    // Token de Supabase es JWT: header.payload.signature
+    const jwksUrl = `${supabaseUrl}/auth/v1/.well-known/jwks.json`;
+    const res = await fetch(jwksUrl);
+    if (!res.ok) throw new Error('JWKS fetch failed');
+
+    const jwks = await res.json();
+    jwksCache.set(cacheKey, { data: jwks, timestamp: Date.now() });
+    return jwks;
+  } catch (e) {
+    console.error('JWKS fetch error:', e.message);
+    return null;
+  }
+}
+
+function base64UrlDecode(str) {
+  const padded = str.padEnd(str.length + (4 - (str.length % 4)) % 4, '=');
+  return atob(padded.replace(/-/g, '+').replace(/_/g, '/'));
+}
+
+async function verificarTokenSupabase(token, supabaseUrl) {
+  if (!token || !supabaseUrl) return null;
+
+  try {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
 
-    // Decodificar payload (no validamos firma, Supabase lo garantiza)
-    const payload = JSON.parse(atob(parts[1]));
+    // Decodificar header y payload
+    const header = JSON.parse(base64UrlDecode(parts[0]));
+    const payload = JSON.parse(base64UrlDecode(parts[1]));
+    const signature = parts[2];
 
     // Verificar expiración
     const ahora = Math.floor(Date.now() / 1000);
-    if (payload.exp && payload.exp < ahora) return null;
+    if (payload.exp && payload.exp < ahora) {
+      console.warn('[JWT] Token expirado');
+      return null;
+    }
 
-    // Retornar datos del usuario (email está en sub o email)
+    // Obtener JWKS de Supabase
+    const jwks = await obtenerJWKS(supabaseUrl);
+    if (!jwks || !jwks.keys) {
+      console.error('[JWT] JWKS no disponible');
+      return null;
+    }
+
+    // Encontrar la clave correspondiente
+    const key = jwks.keys.find(k => k.kid === header.kid);
+    if (!key) {
+      console.warn('[JWT] Key ID no encontrado en JWKS');
+      return null;
+    }
+
+    // Validar que el algoritmo sea ES256 (Supabase siempre usa ES256)
+    if (header.alg !== 'ES256' || key.alg !== 'ES256') {
+      console.warn('[JWT] Algoritmo no es ES256');
+      return null;
+    }
+
+    // Importar clave pública desde JWKS
+    const publicKey = await crypto.subtle.importKey(
+      'jwk',
+      {
+        kty: key.kty,
+        crv: key.crv,
+        x: key.x,
+        y: key.y,
+      },
+      { name: 'ECDSA', namedCurve: 'P-256' },
+      false,
+      ['verify']
+    );
+
+    // Decodificar firma (base64url → hex → bytes)
+    const sigBase64 = signature.replace(/-/g, '+').replace(/_/g, '/');
+    const sigBytes = new Uint8Array(atob(sigBase64).split('').map(c => c.charCodeAt(0)));
+
+    // Verificar firma: sign = ECDSA(header.payload)
+    const message = new TextEncoder().encode(`${parts[0]}.${parts[1]}`);
+    const valid = await crypto.subtle.verify(
+      { name: 'ECDSA', hash: 'SHA-256' },
+      publicKey,
+      sigBytes,
+      message
+    );
+
+    if (!valid) {
+      console.warn('[JWT] Firma inválida');
+      return null;
+    }
+
+    // Token válido y autenticado
     return {
       email: payload.email || payload.user_metadata?.email,
       sub: payload.sub,
@@ -201,7 +288,7 @@ async function verificarTokenSupabase(token) {
       exp: payload.exp,
     };
   } catch (e) {
-    console.error('Supabase token error:', e.message);
+    console.error('[JWT] Validation error:', e.message);
     return null;
   }
 }
@@ -707,7 +794,7 @@ async function handleClienteReservas(env, cors, request, url) {
   const authHeader = request.headers.get('Authorization') || '';
   const token = authHeader.replace(/^Bearer\s+/i, '');
 
-  const usuario = await verificarTokenSupabase(token);
+  const usuario = await verificarTokenSupabase(token, env.SUPABASE_URL);
   if (!usuario) return json({ ok: false, error: 'No autorizado' }, 401, cors);
 
   try {
@@ -752,7 +839,7 @@ async function handleClientePerfil(env, cors, request) {
   const authHeader = request.headers.get('Authorization') || '';
   const token = authHeader.replace(/^Bearer\s+/i, '');
 
-  const usuario = await verificarTokenSupabase(token);
+  const usuario = await verificarTokenSupabase(token, env.SUPABASE_URL);
   if (!usuario) return json({ ok: false, error: 'No autorizado' }, 401, cors);
 
   try {
@@ -794,7 +881,7 @@ async function handleClienteCancelarReserva(env, cors, request, ctx) {
   const authHeader = request.headers.get('Authorization') || '';
   const token = authHeader.replace(/^Bearer\s+/i, '');
 
-  const usuario = await verificarTokenSupabase(token);
+  const usuario = await verificarTokenSupabase(token, env.SUPABASE_URL);
   if (!usuario) return json({ ok: false, error: 'No autorizado' }, 401, cors);
 
   let body;
