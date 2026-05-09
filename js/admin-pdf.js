@@ -1,126 +1,86 @@
-// ═══════════════════════════════════════════════════════════════
-// ADMIN PDF UTILITIES — Funciones para generar y descargar PDFs
-// Usa html2pdf.js (CDN)
-// ═══════════════════════════════════════════════════════════════
-
-// ── PDF GIFT CARD ──────────────────────────────────────────────
-
-function descargarPDFGiftCard(giftCardID, giftCard) {
-  try {
-    const html = `
-      <div style="width: 280px; padding: 40px 30px; font-family: Arial, sans-serif; text-align: center; background: linear-gradient(135deg, #d4af37 0%, #f5d547 100%); color: #1f2937;">
-        <h1 style="font-size: 32px; font-weight: 700; margin: 0 0 15px; letter-spacing: 2px;">GIFT CARD</h1>
-        <p style="font-size: 18px; font-weight: 700; letter-spacing: 3px; margin: 0 0 25px; font-family: monospace;">${giftCard.codigo}</p>
-        <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-          <p style="font-size: 12px; color: rgba(0,0,0,0.6); margin: 0 0 5px;">MONTO</p>
-          <p style="font-size: 28px; font-weight: 700; margin: 0;">$${(giftCard.monto || 0).toLocaleString('es-CL')}</p>
-          <p style="font-size: 11px; color: rgba(0,0,0,0.6); margin: 5px 0 0;">CLP</p>
-        </div>
-        ${giftCard.fechaVencimiento ? `
-          <p style="font-size: 11px; margin: 0 0 20px; color: rgba(0,0,0,0.7);">Válida hasta<br><strong>${giftCard.fechaVencimiento}</strong></p>
-        ` : `
-          <p style="font-size: 11px; margin: 0 0 20px; color: rgba(0,0,0,0.7);">Sin fecha de vencimiento</p>
-        `}
-        <div style="margin: 30px 0; padding-top: 20px; border-top: 2px dashed rgba(0,0,0,0.2);">
-          <p style="font-size: 10px; color: rgba(0,0,0,0.7); margin: 0; font-weight: 600;">Presentar en reserva o mencionar al pagar</p>
-        </div>
-      </div>
-    `;
-
-    const element = document.createElement('div');
-    element.innerHTML = html;
-    document.body.appendChild(element);
-
-    const opt = {
-      margin: 5,
-      filename: `giftcard-${giftCard.codigo}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { orientation: 'portrait', unit: 'mm', format: [100, 150] },
-    };
-
-    html2pdf().set(opt).from(element).save().then(() => {
-      document.body.removeChild(element);
-    });
-  } catch (e) {
-    console.error('PDF Gift Card error:', e);
-    toast('Error al generar PDF: ' + e.message, 'error');
+function descargarPDFComprobante(reserva) {
+  if (typeof html2pdf === 'undefined') {
+    alert('HTML2PDF no está disponible. Intenta nuevamente.');
+    return;
   }
+
+  const html = generarHTMLComprobante(reserva);
+  const opt = {
+    margin: 10,
+    filename: 'comprobante-' + reserva.id + '.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+  };
+
+  html2pdf().set(opt).from(html).save();
 }
 
-// ── PDF COMPROBANTE DE RESERVA ────────────────────────────────
+function generarHTMLComprobante(reserva) {
+  const fechaFormato = new Date(reserva.fecha + 'T00:00:00').toLocaleDateString('es-CL', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 
-function descargarPDFComprobante(reserva) {
-  try {
-    const fecha = new Date(`${reserva.fecha}T12:00:00`);
-    const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-    const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-    const fechaFormato = `${dias[fecha.getDay()]}, ${fecha.getDate()} de ${meses[fecha.getMonth()]} de ${fecha.getFullYear()}`;
+  const precioFormato = new Intl.NumberFormat('es-CL', {
+    style: 'currency',
+    currency: 'CLP',
+    minimumFractionDigits: 0,
+  }).format(reserva.precio);
 
-    const html = `
-      <div style="padding: 40px; font-family: Arial, sans-serif; color: #333; max-width: 600px;">
-        <!-- HEADER -->
-        <div style="text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #d4af37;">
-          <h1 style="font-size: 24px; color: #d4af37; margin: 0; font-weight: 700;">COMPROBANTE DE RESERVA</h1>
-          <p style="font-size: 12px; color: #666; margin: 8px 0 0;">Belleza Integral</p>
-        </div>
+  const estadoStyle = reserva.estado === 'Pagada' ? 'background: #dcfce7; color: #166534;' :
+    reserva.estado === 'Completada' ? 'background: #dbeafe; color: #1e40af;' :
+    reserva.estado === 'Pendiente' ? 'background: #fef3c7; color: #92400e;' :
+    'background: #fee2e2; color: #991b1b;';
 
-        <!-- NÚMERO DE RESERVA -->
-        <div style="text-align: center; margin-bottom: 30px;">
-          <p style="font-size: 13px; color: #666; margin: 0 0 5px; text-transform: uppercase;">Número de Reserva</p>
-          <p style="font-size: 20px; font-weight: 700; color: #1f2937; margin: 0; font-family: monospace;">${reserva.id}</p>
-        </div>
+  const html = document.createElement('div');
+  html.innerHTML = '<div style="width: 100%; max-width: 800px; margin: 0 auto; padding: 40px; font-family: Segoe UI, Arial, sans-serif; color: #1f2937;">' +
+    '<div style="text-align: center; margin-bottom: 40px; border-bottom: 2px solid #d4af37; padding-bottom: 20px;">' +
+    '<h1 style="margin: 0; color: #d4af37; font-size: 28px;">COMPROBANTE DE RESERVA</h1>' +
+    '<p style="margin: 8px 0 0; color: #6b7280; font-size: 14px;">Belleza Integral</p>' +
+    '</div>' +
+    '<div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 30px;">' +
+    '<p style="margin: 0 0 10px; font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">ID de Reserva</p>' +
+    '<p style="margin: 0; font-size: 18px; font-weight: 700; color: #1f2937; font-family: monospace;">' + reserva.id + '</p>' +
+    '</div>' +
+    '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">' +
+    '<div>' +
+    '<p style="margin: 0 0 8px; font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Cliente</p>' +
+    '<p style="margin: 0; font-size: 14px; color: #1f2937;">' + (reserva.nombre || '') + '</p>' +
+    '<p style="margin: 4px 0 0; font-size: 13px; color: #6b7280;">' + (reserva.email || '') + '</p>' +
+    '<p style="margin: 2px 0 0; font-size: 13px; color: #6b7280;">' + (reserva.telefono || 'Sin teléfono') + '</p>' +
+    '</div>' +
+    '<div>' +
+    '<p style="margin: 0 0 8px; font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Estado</p>' +
+    '<p style="margin: 0; font-size: 14px; font-weight: 600; padding: 6px 12px; border-radius: 4px; width: fit-content;' + estadoStyle + '">' + reserva.estado + '</p>' +
+    '</div>' +
+    '</div>' +
+    '<div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 30px;">' +
+    '<p style="margin: 0 0 12px; font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Servicio</p>' +
+    '<p style="margin: 0 0 15px; font-size: 16px; font-weight: 600; color: #1f2937;">' + (reserva.servicioNombre || '') + '</p>' +
+    '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">' +
+    '<div><p style="margin: 0 0 4px; font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Especialista</p>' +
+    '<p style="margin: 0; font-size: 14px; color: #1f2937;">' + (reserva.empleadoNombre || '') + '</p></div>' +
+    '<div><p style="margin: 0 0 4px; font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Duración</p>' +
+    '<p style="margin: 0; font-size: 14px; color: #1f2937;">' + (reserva.duracion || 60) + ' minutos</p></div>' +
+    '</div>' +
+    '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">' +
+    '<div><p style="margin: 0 0 4px; font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Fecha</p>' +
+    '<p style="margin: 0; font-size: 14px; color: #1f2937;">' + fechaFormato + '</p></div>' +
+    '<div><p style="margin: 0 0 4px; font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Hora</p>' +
+    '<p style="margin: 0; font-size: 14px; color: #1f2937;">' + (reserva.horaInicio || '') + ' - ' + (reserva.horaFin || '') + '</p></div>' +
+    '</div>' +
+    '</div>' +
+    '<div style="background: linear-gradient(135deg, #d4af37 0%, #f5d547 100%); padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 30px;">' +
+    '<p style="margin: 0 0 8px; font-size: 12px; color: rgba(31, 41, 55, 0.7); text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Monto</p>' +
+    '<p style="margin: 0; font-size: 28px; font-weight: 700; color: #1f2937;">' + precioFormato + '</p>' +
+    '</div>' +
+    '<div style="border-top: 2px solid #e5e7eb; padding-top: 20px; text-align: center;">' +
+    '<p style="margin: 0; font-size: 12px; color: #9ca3af;">Documento generado automáticamente</p>' +
+    '<p style="margin: 4px 0 0; font-size: 12px; color: #9ca3af;">' + new Date().toLocaleDateString('es-CL') + '</p>' +
+    '</div>' +
+    '</div>';
 
-        <!-- INFORMACIÓN DEL CLIENTE -->
-        <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-          <h3 style="font-size: 13px; font-weight: 700; color: #374151; margin: 0 0 12px; text-transform: uppercase;">Datos del Cliente</h3>
-          <p style="margin: 5px 0; font-size: 13px;"><strong>Nombre:</strong> ${reserva.nombre}</p>
-          <p style="margin: 5px 0; font-size: 13px;"><strong>Email:</strong> ${reserva.email}</p>
-          ${reserva.telefono ? `<p style="margin: 5px 0; font-size: 13px;"><strong>Teléfono:</strong> ${reserva.telefono}</p>` : ''}
-        </div>
-
-        <!-- DETALLES DE LA CITA -->
-        <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-          <h3 style="font-size: 13px; font-weight: 700; color: #374151; margin: 0 0 12px; text-transform: uppercase;">Detalles de la Cita</h3>
-          <p style="margin: 5px 0; font-size: 13px;"><strong>Servicio:</strong> ${reserva.servicioNombre}</p>
-          <p style="margin: 5px 0; font-size: 13px;"><strong>Especialista:</strong> ${reserva.empleadoNombre}</p>
-          <p style="margin: 5px 0; font-size: 13px;"><strong>Fecha:</strong> ${fechaFormato}</p>
-          <p style="margin: 5px 0; font-size: 13px;"><strong>Hora:</strong> ${reserva.horaInicio} - ${reserva.horaFin}</p>
-          <p style="margin: 5px 0; font-size: 13px;"><strong>Estado:</strong> ${reserva.estado}</p>
-        </div>
-
-        <!-- PRECIO -->
-        <div style="background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); padding: 15px; border-radius: 8px; border: 2px solid #d4af37; margin-bottom: 30px; text-align: center;">
-          <p style="font-size: 12px; color: #666; margin: 0 0 5px; text-transform: uppercase;">Total a Pagar</p>
-          <p style="font-size: 28px; font-weight: 700; color: #d4af37; margin: 0;">$${(reserva.precio || 0).toLocaleString('es-CL')}</p>
-          <p style="font-size: 12px; color: #666; margin: 5px 0 0;">CLP</p>
-        </div>
-
-        <!-- FOOTER -->
-        <div style="border-top: 1px solid #e5e7eb; padding-top: 15px; font-size: 11px; color: #6b7280; text-align: center;">
-          <p style="margin: 0 0 5px;">Este documento fue generado automáticamente y es válido sin firma.</p>
-          <p style="margin: 0;">Belleza Integral • Contacto: contacto@bellezaintegral.com</p>
-        </div>
-      </div>
-    `;
-
-    const element = document.createElement('div');
-    element.innerHTML = html;
-    document.body.appendChild(element);
-
-    const opt = {
-      margin: 10,
-      filename: `comprobante-${reserva.id}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' },
-    };
-
-    html2pdf().set(opt).from(element).save().then(() => {
-      document.body.removeChild(element);
-    });
-  } catch (e) {
-    console.error('PDF Comprobante error:', e);
-    toast('Error al generar PDF: ' + e.message, 'error');
-  }
+  return html;
 }
