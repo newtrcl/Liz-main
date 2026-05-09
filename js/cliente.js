@@ -22,7 +22,7 @@ async function initCliente() {
 
     // Inicializar Supabase
     if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-      window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     } else {
       console.error('Supabase credentials not found');
       showToast('Error: No se puede conectar con Supabase', 'error');

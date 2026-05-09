@@ -3,31 +3,28 @@
 // Usa Supabase Auth para autenticación con Google
 // ═══════════════════════════════════════════════════════════════
 
-// Inicializar Supabase (se carga desde window.supabaseClient)
-let supabase = null;
-
-async function initSupabase() {
+// Obtener cliente Supabase (se carga desde window.supabaseClient)
+async function getSupabaseClient() {
   if (!window.supabaseClient) {
     // Esperar a que Supabase SDK cargue
     return new Promise((resolve) => {
       const checkInterval = setInterval(() => {
         if (window.supabaseClient) {
           clearInterval(checkInterval);
-          supabase = window.supabaseClient;
-          resolve();
+          resolve(window.supabaseClient);
         }
       }, 100);
       setTimeout(() => clearInterval(checkInterval), 5000);
     });
   }
-  supabase = window.supabaseClient;
+  return window.supabaseClient;
 }
 
 const ClienteAPI = {
   // ── AUTENTICACIÓN ──────────────────────────────────────
 
   async loginGoogle() {
-    if (!supabase) await initSupabase();
+    const supabase = await getSupabaseClient();
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -44,7 +41,7 @@ const ClienteAPI = {
   },
 
   async getSession() {
-    if (!supabase) await initSupabase();
+    const supabase = await getSupabaseClient();
     try {
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error) throw error;
@@ -56,7 +53,7 @@ const ClienteAPI = {
   },
 
   async logout() {
-    if (!supabase) await initSupabase();
+    const supabase = await getSupabaseClient();
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
@@ -70,7 +67,6 @@ const ClienteAPI = {
   // ── RESERVAS ──────────────────────────────────────────
 
   async getReservas(estado = '', desde = '', hasta = '') {
-    if (!supabase) await initSupabase();
     try {
       const session = await this.getSession();
       if (!session?.access_token) {
@@ -104,7 +100,6 @@ const ClienteAPI = {
   // ── PERFIL ────────────────────────────────────────────
 
   async getPerfil() {
-    if (!supabase) await initSupabase();
     try {
       const session = await this.getSession();
       if (!session?.access_token) {
@@ -133,7 +128,6 @@ const ClienteAPI = {
   // ── CANCELAR RESERVA ──────────────────────────────────
 
   async cancelarReserva(reservaID) {
-    if (!supabase) await initSupabase();
     try {
       const session = await this.getSession();
       if (!session?.access_token) {
