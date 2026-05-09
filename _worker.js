@@ -599,9 +599,6 @@ async function handleCrearReserva(env, cors, request, ctx) {
     await supaFetch(env, `bloqueos?id=eq.${encodeURIComponent(bloqueoID)}`, { method: 'DELETE' });
   }
 
-  // Actualizar / crear perfil de fidelización
-  ctx.waitUntil(actualizarFidelizacion(env, { nombre, email, telefono: tel, precio: parseFloat(srv.precio) }));
-
   // [AUDIT:reserva-flujo] Notificar GAS: enviar email "solicitud recibida" (estado Pendiente, espera de pago)
   ctx.waitUntil(notificarGAS(env, 'solicitudReserva', {
     payload: {
@@ -1216,7 +1213,31 @@ async function handleAdminActualizarEstado(env, cors, request, ctx) {
         precio: reserva.precio,
       },
     }));
+
+    // [AUDIT:pdf-recibo] Generar y enviar PDF de comprobante cuando se marca Pagada
+    ctx.waitUntil(notificarGAS(env, 'generarReciboPDF', {
+      payload: {
+        reservaID: reserva.id,
+        nombre: reserva.nombre,
+        email: reserva.email,
+        telefono: reserva.telefono,
+        servicioNombre: reserva.servicio_nombre,
+        empleadoNombre: reserva.empleado_nombre,
+        fecha: reserva.fecha,
+        horaInicio: reserva.hora_inicio,
+        horaFin: reserva.hora_fin,
+        precio: parseFloat(reserva.precio || 0),
+      },
+    }));
   } else if (estado === 'Completada') {
+    // [AUDIT:fidelizacion-completada] Sumar puntos de fidelización solo cuando se marca Completada
+    ctx.waitUntil(actualizarFidelizacion(env, {
+      nombre: reserva.nombre,
+      email: reserva.email,
+      telefono: reserva.telefono,
+      precio: parseFloat(reserva.precio || 0),
+    }));
+
     // Email de agradecimiento al cliente
     ctx.waitUntil(notificarGAS(env, 'marcarCompletada', {
       payload: {

@@ -23,6 +23,8 @@ function doPost(e) {
         return _handleReagendar(body);
       case "marcarCompletada":
         return _handleMarcarCompletada(body.payload || body);
+      case "generarReciboPDF":
+        return _handleGenerarReciboPDF(body.payload || body);
       case "enviarGiftCard":
         return _handleEnviarGiftCard(body.payload || body);
       default:
@@ -120,6 +122,19 @@ function _handleMarcarCompletada(payload) {
     return jsonOut({ ok: true });
   } catch(e) {
     log("ERROR", "marcarCompletada", payload.reservaID || "", payload.nombre || "", {}, e.message);
+    return jsonOut({ ok: false, error: e.message });
+  }
+}
+
+// [AUDIT:pdf-recibo] Generar y enviar comprobante PDF cuando se marca Pagada
+function _handleGenerarReciboPDF(payload) {
+  if (!payload || !payload.email) return jsonOut({ ok: false, error: "Payload vacío" });
+  try {
+    enviarReciboPDF(payload);
+    log("INFO", "generarReciboPDF", payload.reservaID || "", payload.nombre, {}, "GAS OK");
+    return jsonOut({ ok: true });
+  } catch(e) {
+    log("ERROR", "generarReciboPDF", payload.reservaID || "", payload.nombre || "", {}, e.message);
     return jsonOut({ ok: false, error: e.message });
   }
 }
