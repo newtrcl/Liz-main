@@ -215,6 +215,40 @@ const API = {
       return { ok: false, error: e.message };
     }
   },
+
+  // ── ADMIN LOGIN ──────────────────────────────────────────
+  async adminLogin(password) {
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ password }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        return { ok: false, error: data.error || 'Error al iniciar sesión', status: res.status };
+      }
+      return await res.json();
+    } catch (e) {
+      console.error('adminLogin error:', e);
+      return { ok: false, error: e.message };
+    }
+  },
+
+  async adminLogout() {
+    try {
+      const res = await fetch('/api/admin/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      return await res.json();
+    } catch (e) {
+      console.error('adminLogout error:', e);
+      return { ok: false, error: e.message };
+    }
+  },
 };
 
 // Export para uso global
