@@ -1,135 +1,221 @@
-/* ================================================================
-   Belleza Integral — js/api.js  v2
-   Todas las llamadas van al Worker (/api/*).
-   No hay API keys ni tokens expuestos aquí.
-   ================================================================ */
-
-// Config visual (no son secretos)
-const LOGO_URL       = 'https://lh3.googleusercontent.com/d/1KegXjaRohFEhnPc-FxlaC-sa8esSI3QV';
-const NEGOCIO_NOMBRE = 'Belleza Integral';
-
-async function apiFetch(path, options = {}) {
-  try {
-    const res = await fetch(path, {
-      headers: { 'Content-Type': 'application/json' },
-      ...options,
-    });
-    return res.json();
-  } catch (e) {
-    return { ok: false, error: e.message };
-  }
-}
+/**
+ * API Functions — Belleza Integral Admin
+ * Comunicación con el worker en Cloudflare
+ */
 
 const API = {
-  // ── Públicos ────────────────────────────────────────────────
-  getServicios: () =>
-    apiFetch('/api/servicios'),
-
-  getEmpleados: () =>
-    apiFetch('/api/empleados'),
-
-  getDisponibilidad: (fecha, servicioID) =>
-    apiFetch(`/api/disponibilidad?fecha=${encodeURIComponent(fecha)}&servicioID=${encodeURIComponent(servicioID)}`),
-
-  crearReserva: (payload) =>
-    apiFetch('/api/reservas', { method: 'POST', body: JSON.stringify({ payload }) }),
-
-  cancelarReserva: (reservaID) =>
-    apiFetch('/api/reservas/cancelar', {
-      method: 'POST',
-      body:   JSON.stringify({ reservaID, canceladoPor: 'cliente' }),
-    }),
-
-  // ── Bloqueo temporal de slot ─────────────────────────────────
-  bloquearSlot: (empleadoID, fecha, horaInicio, horaFin, sessionToken) =>
-    apiFetch('/api/slots/bloquear', {
-      method: 'POST',
-      body:   JSON.stringify({ empleadoID, fecha, horaInicio, horaFin, sessionToken }),
-    }),
-
-  liberarBloqueo: (bloqueoID) =>
-    apiFetch(`/api/slots/bloqueo/${encodeURIComponent(bloqueoID)}`, { method: 'DELETE' }),
-
-  // ── Gift Cards ───────────────────────────────────────────────
-  validarGiftCard: (codigo) =>
-    apiFetch(`/api/giftcards/${encodeURIComponent(codigo)}`),
-
-  // ── Fidelización ─────────────────────────────────────────────
-  getFidelizacionQR: (token) =>
-    apiFetch(`/api/fidelizacion/qr/${encodeURIComponent(token)}`),
-
-  // ── Admin (cookie httpOnly) ──────────────────────────────────
-  adminLogin: (password) =>
-    apiFetch('/api/admin/login', {
-      method:      'POST',
-      credentials: 'same-origin',
-      body:        JSON.stringify({ password }),
-    }),
-
-  adminLogout: () =>
-    apiFetch('/api/admin/logout', { method: 'POST', credentials: 'same-origin' }),
-
-  getDashboard: () =>
-    apiFetch('/api/admin/dashboard', { credentials: 'same-origin' }),
-
-  getReservasPorDia: (fecha) =>
-    apiFetch(`/api/admin/reservas?fecha=${encodeURIComponent(fecha)}`, { credentials: 'same-origin' }),
-
-  getReportes: (desde, hasta) =>
-    apiFetch(`/api/admin/reportes?desde=${encodeURIComponent(desde)}&hasta=${encodeURIComponent(hasta)}`, {
-      credentials: 'same-origin',
-    }),
-
-  // ── Phase 3: Reportes mejorados ──────────────────────────────
-  getReportesResumen: (desde, hasta) =>
-    apiFetch(`/api/admin/reportes/resumen?desde=${encodeURIComponent(desde)}&hasta=${encodeURIComponent(hasta)}`, {
-      credentials: 'same-origin',
-    }),
-
-  getReportesGraficos: (desde, hasta) =>
-    apiFetch(`/api/admin/reportes/grafico-datos?desde=${encodeURIComponent(desde)}&hasta=${encodeURIComponent(hasta)}`, {
-      credentials: 'same-origin',
-    }),
-
-  descargarReportesExcel: (desde, hasta) => {
-    window.location.href = `/api/admin/reportes/excel?desde=${encodeURIComponent(desde)}&hasta=${encodeURIComponent(hasta)}`;
+  // ── DASHBOARD ────────────────────────────────────────────────
+  async getDashboard() {
+    try {
+      const res = await fetch('/api/admin/dashboard', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (!res.ok) return { ok: false, error: 'No autenticado', status: res.status };
+      return await res.json();
+    } catch (e) {
+      console.error('getDashboard error:', e);
+      return { ok: false, error: e.message };
+    }
   },
 
-  actualizarEstado: (reservaID, estado) =>
-    apiFetch('/api/admin/reservas/estado', {
-      method:      'POST',
-      credentials: 'same-origin',
-      body:        JSON.stringify({ params: { reservaID, estado } }),
-    }),
+  // ── RESERVAS ─────────────────────────────────────────────────
+  async getReservasPorDia(fecha) {
+    try {
+      const res = await fetch(`/api/admin/reservas?fecha=${encodeURIComponent(fecha)}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        return { ok: false, error: data.error || 'Error al obtener reservas', status: res.status };
+      }
+      const data = await res.json();
+      return Array.isArray(data) ? data : data.reservas || [];
+    } catch (e) {
+      console.error('getReservasPorDia error:', e);
+      return { ok: false, error: e.message };
+    }
+  },
 
-  cancelarAdmin: (reservaID) =>
-    apiFetch('/api/admin/reservas/cancelar', {
-      method:      'POST',
-      credentials: 'same-origin',
-      body:        JSON.stringify({ reservaID, canceladoPor: 'admin' }),
-    }),
+  // ── ACTUALIZAR ESTADO ────────────────────────────────────────
+  async actualizarEstado(reservaID, estado) {
+    try {
+      const res = await fetch('/api/admin/reservas/estado', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ reservaID, estado }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        return { ok: false, error: data.error || 'Error al actualizar', status: res.status };
+      }
+      return await res.json();
+    } catch (e) {
+      console.error('actualizarEstado error:', e);
+      return { ok: false, error: e.message };
+    }
+  },
 
-  reagendar: (reservaID, nuevaFecha, nuevaHora) =>
-    apiFetch('/api/admin/reservas/reagendar', {
-      method:      'POST',
-      credentials: 'same-origin',
-      body:        JSON.stringify({ reservaID, nuevaFecha, nuevaHora }),
-    }),
+  // ── CANCELAR RESERVA (ADMIN) ─────────────────────────────────
+  async cancelarAdmin(reservaID) {
+    try {
+      const res = await fetch('/api/admin/reservas/cancelar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ reservaID }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        return { ok: false, error: data.error || 'Error al cancelar', status: res.status };
+      }
+      return await res.json();
+    } catch (e) {
+      console.error('cancelarAdmin error:', e);
+      return { ok: false, error: e.message };
+    }
+  },
 
-  // ── Admin Gift Cards ──────────────────────────────────────────
-  crearGiftCard: (datos) =>
-    apiFetch('/api/admin/giftcards', {
-      method:      'POST',
-      credentials: 'same-origin',
-      body:        JSON.stringify(datos),
-    }),
+  // ── REAGENDAR ────────────────────────────────────────────────
+  async reagendar(reservaID, nuevaFecha, nuevaHora) {
+    try {
+      const res = await fetch('/api/admin/reservas/reagendar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ reservaID, nuevaFecha, nuevaHora }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        return { ok: false, error: data.error || 'Error al reagendar', status: res.status };
+      }
+      return await res.json();
+    } catch (e) {
+      console.error('reagendar error:', e);
+      return { ok: false, error: e.message };
+    }
+  },
 
-  listGiftCards: () =>
-    apiFetch('/api/admin/giftcards', { credentials: 'same-origin' }),
+  // ── REPORTES ─────────────────────────────────────────────────
+  async getReportes(desde, hasta) {
+    try {
+      const url = `/api/admin/reportes?desde=${encodeURIComponent(desde)}&hasta=${encodeURIComponent(hasta)}`;
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        return { ok: false, error: data.error || 'Error al cargar reportes', status: res.status };
+      }
+      return await res.json();
+    } catch (e) {
+      console.error('getReportes error:', e);
+      return { ok: false, error: e.message };
+    }
+  },
 
-  // ── Admin Fidelización ────────────────────────────────────────
-  getFidelizacion: (q = '', limit = 50) =>
-    apiFetch(`/api/admin/fidelizacion?q=${encodeURIComponent(q)}&limit=${limit}`, {
-      credentials: 'same-origin',
-    }),
+  async getReportesResumen(desde, hasta) {
+    try {
+      const url = `/api/admin/reportes/resumen?desde=${encodeURIComponent(desde)}&hasta=${encodeURIComponent(hasta)}`;
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        return { ok: false, error: data.error || 'Error al cargar resumen', status: res.status };
+      }
+      return await res.json();
+    } catch (e) {
+      console.error('getReportesResumen error:', e);
+      return { ok: false, error: e.message };
+    }
+  },
+
+  async getReportesGraficos(desde, hasta) {
+    try {
+      const url = `/api/admin/reportes/grafico-datos?desde=${encodeURIComponent(desde)}&hasta=${encodeURIComponent(hasta)}`;
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        return { ok: false, error: data.error || 'Error al cargar gráficos', status: res.status };
+      }
+      return await res.json();
+    } catch (e) {
+      console.error('getReportesGraficos error:', e);
+      return { ok: false, error: e.message };
+    }
+  },
+
+  // ── GIFT CARDS ───────────────────────────────────────────────
+  async crearGiftCard(payload) {
+    try {
+      const res = await fetch('/api/admin/giftcards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        return { ok: false, error: data.error || 'Error al crear', status: res.status };
+      }
+      return await res.json();
+    } catch (e) {
+      console.error('crearGiftCard error:', e);
+      return { ok: false, error: e.message };
+    }
+  },
+
+  async listGiftCards() {
+    try {
+      const res = await fetch('/api/admin/giftcards', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        return { ok: false, error: data.error || 'Error al cargar', status: res.status };
+      }
+      return await res.json();
+    } catch (e) {
+      console.error('listGiftCards error:', e);
+      return { ok: false, error: e.message };
+    }
+  },
+
+  // ── FIDELIZACIÓN ─────────────────────────────────────────────
+  async getFidelizacion(q, limit) {
+    try {
+      const url = `/api/admin/fidelizacion?q=${encodeURIComponent(q || '')}&limit=${limit || 50}`;
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        return { ok: false, error: data.error || 'Error al cargar', status: res.status };
+      }
+      return await res.json();
+    } catch (e) {
+      console.error('getFidelizacion error:', e);
+      return { ok: false, error: e.message };
+    }
+  },
 };
+
+// Export para uso global
+window.API = API;
