@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TEST GSAP 3D Effects — Belleza Integral</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+      background: linear-gradient(135deg, #1e1b2e 0%, #2d2a3f 100%);
+      color: #374151;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 60px;
+      color: white;
+    }
+
+    .header h1 {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      font-size: 14px;
+      color: #d1d5db;
+    }
+
+    .instructions {
+      background: rgba(212, 175, 55, 0.1);
+      border: 1px solid #d4af37;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 40px;
+      color: #d4af37;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .instructions strong {
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    .instructions ul {
+      margin-left: 20px;
+      margin-top: 10px;
+    }
+
+    .instructions li {
+      margin-bottom: 8px;
+    }
+
+    /* Galería */
+    .galeria-servicios h2 {
+      font-size: 24px;
+      color: white;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .servicios-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 30px;
+      margin-bottom: 50px;
+    }
+
+    .servicio-card {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .servicio-card-img {
+      width: 100%;
+      height: 280px;
+      background: linear-gradient(135deg, #d4af37 0%, #f5d547 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 80px;
+      color: rgba(255, 255, 255, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .servicio-card-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .servicio-card-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+
+    .servicio-card:hover .servicio-card-overlay {
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    .servicio-card-overlay-text {
+      color: white;
+      font-weight: 600;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .servicio-card:hover .servicio-card-overlay-text {
+      opacity: 1;
+    }
+
+    .servicio-card-content {
+      padding: 20px;
+      background: white;
+    }
+
+    .servicio-card-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 8px;
+    }
+
+    .servicio-card-desc {
+      font-size: 13px;
+      color: #6b7280;
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    .servicio-card-price {
+      font-size: 14px;
+      font-weight: 600;
+      color: #d4af37;
+    }
+
+    .debug-info {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #1f2937;
+      color: #10b981;
+      padding: 15px 20px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 12px;
+      max-width: 300px;
+      border: 1px solid #10b981;
+      z-index: 100;
+    }
+
+    @media (max-width: 768px) {
+      .servicios-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+
+      .servicio-card-img {
+        height: 200px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>✨ TEST: GSAP 3D Effects</h1>
+      <p>Prueba de efectos 3D en galería de servicios — FASE 4</p>
+    </div>
+
+    <div class="instructions">
+      <strong>📝 Instrucciones de prueba:</strong>
+      <ul>
+        <li><strong>Scroll:</strong> Desplázate por la página para ver rotación 3D y parallax</li>
+        <li><strong>Mouse Hover:</strong> Pasa el ratón sobre las tarjetas para efecto tilt dinámico</li>
+        <li><strong>Console:</strong> Abre DevTools (F12) para ver los logs de inicialización</li>
+        <li><strong>Mobile:</strong> Prueba en dispositivo móvil (solo scroll effect, sin mouse)</li>
+      </ul>
+    </div>
+
+    <div class="galeria-servicios">
+      <h2>✨ Nuestros Servicios</h2>
+      <div class="servicios-grid" id="servicios-grid">
+        <!-- Servicio 1 -->
+        <div class="servicio-card" data-gsap-effect="3d">
+          <div class="servicio-card-img" data-gsap-image="true">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23d4af37' width='100' height='100'/%3E%3Ctext x='50' y='50' text-anchor='middle' dominant-baseline='middle' font-size='40' fill='rgba(255,255,255,0.5)'%3E🎨%3C/text%3E%3C/svg%3E" alt="Coloración" />
+            <div class="servicio-card-overlay">
+              <div class="servicio-card-overlay-text">Coloración Premium</div>
+            </div>
+          </div>
+          <div class="servicio-card-content">
+            <div class="servicio-card-title">Coloración Profesional</div>
+            <div class="servicio-card-desc">Tintes y decoloraciones con productos premium</div>
+            <div class="servicio-card-price">$45.000 - $75.000</div>
+          </div>
+        </div>
+
+        <!-- Servicio 2 -->
+        <div class="servicio-card" data-gsap-effect="3d">
+          <div class="servicio-card-img" data-gsap-image="true">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23f5d547' width='100' height='100'/%3E%3Ctext x='50' y='50' text-anchor='middle' dominant-baseline='middle' font-size='40' fill='rgba(255,255,255,0.5)'%3E💆%3C/text%3E%3C/svg%3E" alt="Tratamientos" />
+            <div class="servicio-card-overlay">
+              <div class="servicio-card-overlay-text">Tratamientos Capilares</div>
+            </div>
+          </div>
+          <div class="servicio-card-content">
+            <div class="servicio-card-title">Tratamientos Capilares</div>
+            <div class="servicio-card-desc">Mascarillas, hidratación y reparación profunda</div>
+            <div class="servicio-card-price">$30.000 - $50.000</div>
+          </div>
+        </div>
+
+        <!-- Servicio 3 -->
+        <div class="servicio-card" data-gsap-effect="3d">
+          <div class="servicio-card-img" data-gsap-image="true">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23d4af37' width='100' height='100'/%3E%3Ctext x='50' y='50' text-anchor='middle' dominant-baseline='middle' font-size='40' fill='rgba(255,255,255,0.5)'%3E✂️%3C/text%3E%3C/svg%3E" alt="Corte" />
+            <div class="servicio-card-overlay">
+              <div class="servicio-card-overlay-text">Corte Personalizado</div>
+            </div>
+          </div>
+          <div class="servicio-card-content">
+            <div class="servicio-card-title">Corte y Peinado</div>
+            <div class="servicio-card-desc">Cortes modernos y peinados para cualquier ocasión</div>
+            <div class="servicio-card-price">$20.000 - $40.000</div>
+          </div>
+        </div>
+
+        <!-- Servicio 4 -->
+        <div class="servicio-card" data-gsap-effect="3d">
+          <div class="servicio-card-img" data-gsap-image="true">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23f5d547' width='100' height='100'/%3E%3Ctext x='50' y='50' text-anchor='middle' dominant-baseline='middle' font-size='40' fill='rgba(255,255,255,0.5)'%3E💅%3C/text%3E%3C/svg%3E" alt="Manicura" />
+            <div class="servicio-card-overlay">
+              <div class="servicio-card-overlay-text">Manicura & Pedicura</div>
+            </div>
+          </div>
+          <div class="servicio-card-content">
+            <div class="servicio-card-title">Manicura & Pedicura</div>
+            <div class="servicio-card-desc">Cuidado completo de manos y pies</div>
+            <div class="servicio-card-price">$15.000 - $35.000</div>
+          </div>
+        </div>
+
+        <!-- Servicio 5 -->
+        <div class="servicio-card" data-gsap-effect="3d">
+          <div class="servicio-card-img" data-gsap-image="true">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23d4af37' width='100' height='100'/%3E%3Ctext x='50' y='50' text-anchor='middle' dominant-baseline='middle' font-size='40' fill='rgba(255,255,255,0.5)'%3E🌟%3C/text%3E%3C/svg%3E" alt="Depilación" />
+            <div class="servicio-card-overlay">
+              <div class="servicio-card-overlay-text">Depilación Profesional</div>
+            </div>
+          </div>
+          <div class="servicio-card-content">
+            <div class="servicio-card-title">Depilación Profesional</div>
+            <div class="servicio-card-desc">Depilación con cera y métodos modernos</div>
+            <div class="servicio-card-price">$10.000 - $30.000</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Spacer para scroll test -->
+    <div style="height: 100vh; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px;">
+      <div style="text-align: center;">
+        <p>📜 Sigue scrolleando</p>
+        <p style="font-size: 14px; color: #9ca3af; margin-top: 10px;">para ver los efectos de parallax</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Debug Info -->
+  <div class="debug-info">
+    <div>✅ GSAP Loaded</div>
+    <div id="debug-cards">📦 Scanning...</div>
+  </div>
+
+  <!-- GSAP & ScrollTrigger -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+  <!-- GSAP 3D Effects -->
+  <script src="js/gsap-3d-effects.js"></script>
+
+  <!-- Debug script -->
+  <script>
+    setTimeout(() => {
+      const cards = document.querySelectorAll('[data-gsap-effect="3d"]');
+      document.getElementById('debug-cards').textContent = `📦 ${cards.length} cards`;
+    }, 100);
+
+    console.log('%c🎨 TEST GSAP 3D Effects', 'color: #d4af37; font-size: 16px; font-weight: bold;');
+    console.log('✨ Efectos esperados:');
+    console.log('  1. Rotación 3D en scroll (ScrollTrigger)');
+    console.log('  2. Parallax effect en imágenes');
+    console.log('  3. Tilt effect en mouse movement');
+    console.log('  4. Hover shadow & scale');
+    console.log('\n💡 Abre DevTools (F12) → Console para ver logs');
+  </script>
+</body>
+</html>

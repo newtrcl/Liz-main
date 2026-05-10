@@ -27,6 +27,11 @@
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="apple-touch-icon" href="/logo-apple.png">
 
+  <!-- Fuentes recomendadas por UI/UX Pro Max Skill: Playfair Display + Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -321,105 +326,177 @@
       to { transform: translateX(0); opacity: 1; }
     }
 
-    /* ── GALERÍA DE SERVICIOS (FASE 4: GSAP 3D Effects) ── */
+    /* ── GALERÍA DE SERVICIOS (FASE 4: GSAP 3D + Glassmorphism) ── */
+    /* Fuentes: Playfair Display (headings) + Inter (body) — UI/UX Pro Max Skill */
+
     .galeria-servicios {
-      margin-bottom: 50px;
+      margin-bottom: 60px;
     }
-    .galeria-servicios h2 {
-      font-size: 24px;
-      color: white;
-      margin-bottom: 30px;
+
+    .galeria-titulo {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 32px;
+      font-weight: 600;
+      color: #fff;
       text-align: center;
+      margin-bottom: 8px;
+      letter-spacing: 0.02em;
     }
+
+    .galeria-subtitulo {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      color: rgba(255,255,255,0.5);
+      text-align: center;
+      margin-bottom: 40px;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
     .servicios-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 30px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
       margin-bottom: 50px;
     }
+
+    /* Glassmorphism card — UI/UX Pro Max: rgba surface + backdrop-filter + hairline border */
     .servicio-card {
       position: relative;
-      border-radius: 12px;
+      border-radius: 16px;          /* MD: border-radius 16 on all cards */
       overflow: hidden;
       cursor: pointer;
-      transition: all 0.3s ease;
-      /* [FASE 4] Data attributes for GSAP: data-gsap-effect="3d|parallax|tilt" */
-      /* ScrollTrigger will detect this card and apply animations */
+      /* Glassmorphism base */
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08); /* hairline border */
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+      /* GSAP manejará transform — no poner transition aquí para evitar conflictos */
+      will-change: transform, box-shadow, opacity;
+      /* cursor pointer — regla explícita de la skill */
     }
+
+    /* Imagen con overflow para parallax sin recortar la card */
     .servicio-card-img {
       width: 100%;
-      height: 280px;
-      background: linear-gradient(135deg, #d4af37 0%, #f5d547 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 80px;
-      color: rgba(255, 255, 255, 0.3);
+      height: 260px;
       position: relative;
       overflow: hidden;
-      /* [FASE 4] data-gsap-image: reference for GSAP parallax/tilt */
+      background: linear-gradient(135deg, rgba(212,175,55,0.3) 0%, rgba(30,27,46,0.8) 100%);
     }
+
     .servicio-card-img img {
       width: 100%;
-      height: 100%;
+      height: 120%;           /* 120% permite el movimiento parallax ±30px sin mostrar borde */
       object-fit: cover;
       display: block;
+      margin-top: -10%;       /* centrar verticalmente el excedente */
+      will-change: transform;
     }
+
+    /* Overlay con gradiente dorado — UI/UX Pro Max: accent color gold */
     .servicio-card-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to top,
+        rgba(212, 175, 55, 0.55) 0%,
+        rgba(30, 27, 46, 0) 60%
+      );
+      opacity: 0;
+      transition: opacity 0.25s ease; /* 250ms — dentro del rango 150-300ms */
+      display: flex;
+      align-items: flex-end;
+      padding: 20px;
+    }
+
+    .servicio-card:hover .servicio-card-overlay {
+      opacity: 1;
+    }
+
+    .servicio-card-overlay-text {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* Contenido inferior con glassmorphism */
+    .servicio-card-content {
+      padding: 20px 22px;
+      background: rgba(255, 255, 255, 0.04);
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .servicio-card-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 17px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+
+    .servicio-card-desc {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.55);
+      line-height: 1.6;
+      margin-bottom: 14px;
+    }
+
+    /* Precio con línea decorativa dorada */
+    .servicio-card-price {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: #d4af37;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .servicio-card-price::before {
+      content: '';
+      display: inline-block;
+      width: 18px;
+      height: 1px;
+      background: #d4af37;
+      opacity: 0.7;
+    }
+
+    /* Punto de luz sutil en la esquina superior — glassmorphism detail */
+    .servicio-card::before {
+      content: '';
       position: absolute;
       top: 0;
       left: 0;
       right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.3s ease;
-    }
-    .servicio-card:hover .servicio-card-overlay {
-      background: rgba(0, 0, 0, 0.5);
-    }
-    .servicio-card-overlay-text {
-      color: white;
-      font-weight: 600;
-      text-align: center;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-    .servicio-card:hover .servicio-card-overlay-text {
-      opacity: 1;
-    }
-    .servicio-card-content {
-      padding: 20px;
-      background: white;
-    }
-    .servicio-card-title {
-      font-size: 16px;
-      font-weight: 700;
-      color: #1f2937;
-      margin-bottom: 8px;
-    }
-    .servicio-card-desc {
-      font-size: 13px;
-      color: #6b7280;
-      line-height: 1.5;
-      margin-bottom: 12px;
-    }
-    .servicio-card-price {
-      font-size: 14px;
-      font-weight: 600;
-      color: #d4af37;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+      z-index: 1;
     }
 
     /* Responsive gallery */
     @media (max-width: 768px) {
       .servicios-grid {
         grid-template-columns: 1fr;
-        gap: 20px;
+        gap: 16px;
       }
       .servicio-card-img {
         height: 200px;
+      }
+      .galeria-titulo {
+        font-size: 24px;
+      }
+    }
+
+    @media (min-width: 1200px) {
+      .servicios-grid {
+        grid-template-columns: repeat(5, 1fr);
       }
     }
   </style>
@@ -500,88 +577,121 @@
         </div>
       </div>
 
-      <!-- GALERÍA DE SERVICIOS (FASE 4: GSAP 3D Effects with ScrollTrigger) -->
-      <div class="galeria-servicios">
-        <h2>✨ Nuestros Servicios</h2>
-        <div class="servicios-grid" id="servicios-grid">
-          <!-- [FASE 4] Servicio 1: Coloración -->
-          <div class="servicio-card" data-gsap-effect="3d">
-            <div class="servicio-card-img" data-gsap-image="true">
-              <!-- [FASE 4] GSAP ScrollTrigger will apply parallax/tilt to this element -->
-              <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23d4af37' width='100' height='100'/%3E%3Ctext x='50' y='50' text-anchor='middle' dominant-baseline='middle' font-size='40' fill='rgba(255,255,255,0.5)'%3E🎨%3C/text%3E%3C/svg%3E" alt="Coloración" />
-              <div class="servicio-card-overlay">
-                <div class="servicio-card-overlay-text">Coloración Premium</div>
-              </div>
-            </div>
-            <div class="servicio-card-content">
-              <div class="servicio-card-title">Coloración Profesional</div>
-              <div class="servicio-card-desc">Tintes y decoloraciones con productos premium para un color duradero y vibrante</div>
-              <div class="servicio-card-price">$45.000 - $75.000</div>
-            </div>
-          </div>
+      <!-- GALERÍA DE SERVICIOS — FASE 4: GSAP 3D + Glassmorphism -->
+      <!-- Fuentes: Playfair Display + Inter | Easing: cubic-bezier(0.16,1,0.3,1) | Stagger: 40ms -->
+      <div class="galeria-servicios" aria-label="Galería de servicios">
+        <h2 class="galeria-titulo">Nuestros Servicios</h2>
+        <p class="galeria-subtitulo">Belleza &amp; Bienestar Integral</p>
 
-          <!-- [FASE 4] Servicio 2: Tratamientos -->
-          <div class="servicio-card" data-gsap-effect="3d">
-            <div class="servicio-card-img" data-gsap-image="true">
-              <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23f5d547' width='100' height='100'/%3E%3Ctext x='50' y='50' text-anchor='middle' dominant-baseline='middle' font-size='40' fill='rgba(255,255,255,0.5)'%3E💆%3C/text%3E%3C/svg%3E" alt="Tratamientos" />
-              <div class="servicio-card-overlay">
-                <div class="servicio-card-overlay-text">Tratamientos Capilares</div>
-              </div>
-            </div>
-            <div class="servicio-card-content">
-              <div class="servicio-card-title">Tratamientos Capilares</div>
-              <div class="servicio-card-desc">Mascarillas, hidratación y reparación profunda para cabello saludable</div>
-              <div class="servicio-card-price">$30.000 - $50.000</div>
-            </div>
-          </div>
+        <div class="servicios-grid" id="servicios-grid" role="list">
 
-          <!-- [FASE 4] Servicio 3: Corte y Peinado -->
-          <div class="servicio-card" data-gsap-effect="3d">
+          <!-- Servicio 1: Coloración — placeholder, reemplazar con imagen real de Gemini -->
+          <article class="servicio-card" data-gsap-effect="3d" role="listitem">
             <div class="servicio-card-img" data-gsap-image="true">
-              <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23d4af37' width='100' height='100'/%3E%3Ctext x='50' y='50' text-anchor='middle' dominant-baseline='middle' font-size='40' fill='rgba(255,255,255,0.5)'%3E✂️%3C/text%3E%3C/svg%3E" alt="Corte" />
-              <div class="servicio-card-overlay">
-                <div class="servicio-card-overlay-text">Corte Personalizado</div>
+              <img
+                src="img/servicios/coloracion.jpg"
+                onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 260%22%3E%3Crect fill=%22%232d2244%22 width=%22400%22 height=%22260%22/%3E%3Crect fill=%22%23d4af37%22 opacity=%220.15%22 width=%22400%22 height=%22260%22/%3E%3Ctext x=%22200%22 y=%22120%22 text-anchor=%22middle%22 font-family=%22Georgia,serif%22 font-size=%2228%22 fill=%22%23d4af37%22 opacity=%220.6%22%3EColoración%3C/text%3E%3Ctext x=%22200%22 y=%22155%22 text-anchor=%22middle%22 font-family=%22Georgia,serif%22 font-size=%2214%22 fill=%22rgba(255,255,255,0.35)%22%3EPronto imagen real%3C/text%3E%3C/svg%3E'"
+                alt="Servicio de coloración profesional en Belleza Integral"
+                width="400" height="260"
+                loading="lazy"
+              />
+              <div class="servicio-card-overlay" aria-hidden="true">
+                <span class="servicio-card-overlay-text">Ver servicio</span>
               </div>
             </div>
             <div class="servicio-card-content">
-              <div class="servicio-card-title">Corte y Peinado</div>
-              <div class="servicio-card-desc">Cortes modernos y peinados para cualquier ocasión con asesoría experta</div>
-              <div class="servicio-card-price">$20.000 - $40.000</div>
+              <h3 class="servicio-card-title">Coloración</h3>
+              <p class="servicio-card-desc">Tintes y decoloraciones con productos premium para un color duradero y vibrante</p>
+              <div class="servicio-card-price">$45.000 – $75.000</div>
             </div>
-          </div>
+          </article>
 
-          <!-- [FASE 4] Servicio 4: Manicura/Pedicura -->
-          <div class="servicio-card" data-gsap-effect="3d">
+          <!-- Servicio 2: Tratamientos -->
+          <article class="servicio-card" data-gsap-effect="3d" role="listitem">
             <div class="servicio-card-img" data-gsap-image="true">
-              <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23f5d547' width='100' height='100'/%3E%3Ctext x='50' y='50' text-anchor='middle' dominant-baseline='middle' font-size='40' fill='rgba(255,255,255,0.5)'%3E💅%3C/text%3E%3C/svg%3E" alt="Manicura" />
-              <div class="servicio-card-overlay">
-                <div class="servicio-card-overlay-text">Manicura & Pedicura</div>
+              <img
+                src="img/servicios/tratamientos.jpg"
+                onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 260%22%3E%3Crect fill=%22%232d2244%22 width=%22400%22 height=%22260%22/%3E%3Crect fill=%22%23d4af37%22 opacity=%220.15%22 width=%22400%22 height=%22260%22/%3E%3Ctext x=%22200%22 y=%22120%22 text-anchor=%22middle%22 font-family=%22Georgia,serif%22 font-size=%2228%22 fill=%22%23d4af37%22 opacity=%220.6%22%3ETratamientos%3C/text%3E%3Ctext x=%22200%22 y=%22155%22 text-anchor=%22middle%22 font-family=%22Georgia,serif%22 font-size=%2214%22 fill=%22rgba(255,255,255,0.35)%22%3EPronto imagen real%3C/text%3E%3C/svg%3E'"
+                alt="Tratamientos capilares en Belleza Integral"
+                width="400" height="260"
+                loading="lazy"
+              />
+              <div class="servicio-card-overlay" aria-hidden="true">
+                <span class="servicio-card-overlay-text">Ver servicio</span>
               </div>
             </div>
             <div class="servicio-card-content">
-              <div class="servicio-card-title">Manicura & Pedicura</div>
-              <div class="servicio-card-desc">Cuidado completo de manos y pies con diseños y acabados profesionales</div>
-              <div class="servicio-card-price">$15.000 - $35.000</div>
+              <h3 class="servicio-card-title">Tratamientos</h3>
+              <p class="servicio-card-desc">Mascarillas, hidratación y reparación profunda para cabello saludable</p>
+              <div class="servicio-card-price">$30.000 – $50.000</div>
             </div>
-          </div>
+          </article>
 
-          <!-- [FASE 4] Servicio 5: Depilación -->
-          <div class="servicio-card" data-gsap-effect="3d">
+          <!-- Servicio 3: Corte y Peinado -->
+          <article class="servicio-card" data-gsap-effect="3d" role="listitem">
             <div class="servicio-card-img" data-gsap-image="true">
-              <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23d4af37' width='100' height='100'/%3E%3Ctext x='50' y='50' text-anchor='middle' dominant-baseline='middle' font-size='40' fill='rgba(255,255,255,0.5)'%3E🌟%3C/text%3E%3C/svg%3E" alt="Depilación" />
-              <div class="servicio-card-overlay">
-                <div class="servicio-card-overlay-text">Depilación Profesional</div>
+              <img
+                src="img/servicios/corte.jpg"
+                onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 260%22%3E%3Crect fill=%22%232d2244%22 width=%22400%22 height=%22260%22/%3E%3Crect fill=%22%23d4af37%22 opacity=%220.15%22 width=%22400%22 height=%22260%22/%3E%3Ctext x=%22200%22 y=%22120%22 text-anchor=%22middle%22 font-family=%22Georgia,serif%22 font-size=%2228%22 fill=%22%23d4af37%22 opacity=%220.6%22%3ECorte%3C/text%3E%3Ctext x=%22200%22 y=%22155%22 text-anchor=%22middle%22 font-family=%22Georgia,serif%22 font-size=%2214%22 fill=%22rgba(255,255,255,0.35)%22%3EPronto imagen real%3C/text%3E%3C/svg%3E'"
+                alt="Corte y peinado profesional en Belleza Integral"
+                width="400" height="260"
+                loading="lazy"
+              />
+              <div class="servicio-card-overlay" aria-hidden="true">
+                <span class="servicio-card-overlay-text">Ver servicio</span>
               </div>
             </div>
             <div class="servicio-card-content">
-              <div class="servicio-card-title">Depilación Profesional</div>
-              <div class="servicio-card-desc">Depilación con cera y métodos modernos para piel suave y cuidada</div>
-              <div class="servicio-card-price">$10.000 - $30.000</div>
+              <h3 class="servicio-card-title">Corte &amp; Peinado</h3>
+              <p class="servicio-card-desc">Cortes modernos y peinados para cualquier ocasión con asesoría experta</p>
+              <div class="servicio-card-price">$20.000 – $40.000</div>
             </div>
-          </div>
+          </article>
+
+          <!-- Servicio 4: Manicura/Pedicura -->
+          <article class="servicio-card" data-gsap-effect="3d" role="listitem">
+            <div class="servicio-card-img" data-gsap-image="true">
+              <img
+                src="img/servicios/manicura.jpg"
+                onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 260%22%3E%3Crect fill=%22%232d2244%22 width=%22400%22 height=%22260%22/%3E%3Crect fill=%22%23d4af37%22 opacity=%220.15%22 width=%22400%22 height=%22260%22/%3E%3Ctext x=%22200%22 y=%22120%22 text-anchor=%22middle%22 font-family=%22Georgia,serif%22 font-size=%2228%22 fill=%22%23d4af37%22 opacity=%220.6%22%3EManicura%3C/text%3E%3Ctext x=%22200%22 y=%22155%22 text-anchor=%22middle%22 font-family=%22Georgia,serif%22 font-size=%2214%22 fill=%22rgba(255,255,255,0.35)%22%3EPronto imagen real%3C/text%3E%3C/svg%3E'"
+                alt="Manicura y pedicura profesional en Belleza Integral"
+                width="400" height="260"
+                loading="lazy"
+              />
+              <div class="servicio-card-overlay" aria-hidden="true">
+                <span class="servicio-card-overlay-text">Ver servicio</span>
+              </div>
+            </div>
+            <div class="servicio-card-content">
+              <h3 class="servicio-card-title">Manicura &amp; Pedicura</h3>
+              <p class="servicio-card-desc">Cuidado completo de manos y pies con diseños y acabados profesionales</p>
+              <div class="servicio-card-price">$15.000 – $35.000</div>
+            </div>
+          </article>
+
+          <!-- Servicio 5: Depilación -->
+          <article class="servicio-card" data-gsap-effect="3d" role="listitem">
+            <div class="servicio-card-img" data-gsap-image="true">
+              <img
+                src="img/servicios/depilacion.jpg"
+                onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 260%22%3E%3Crect fill=%22%232d2244%22 width=%22400%22 height=%22260%22/%3E%3Crect fill=%22%23d4af37%22 opacity=%220.15%22 width=%22400%22 height=%22260%22/%3E%3Ctext x=%22200%22 y=%22120%22 text-anchor=%22middle%22 font-family=%22Georgia,serif%22 font-size=%2228%22 fill=%22%23d4af37%22 opacity=%220.6%22%3EDepilaci%C3%B3n%3C/text%3E%3Ctext x=%22200%22 y=%22155%22 text-anchor=%22middle%22 font-family=%22Georgia,serif%22 font-size=%2214%22 fill=%22rgba(255,255,255,0.35)%22%3EPronto imagen real%3C/text%3E%3C/svg%3E'"
+                alt="Depilación profesional en Belleza Integral"
+                width="400" height="260"
+                loading="lazy"
+              />
+              <div class="servicio-card-overlay" aria-hidden="true">
+                <span class="servicio-card-overlay-text">Ver servicio</span>
+              </div>
+            </div>
+            <div class="servicio-card-content">
+              <h3 class="servicio-card-title">Depilación</h3>
+              <p class="servicio-card-desc">Depilación con cera y métodos modernos para piel suave y cuidada</p>
+              <div class="servicio-card-price">$10.000 – $30.000</div>
+            </div>
+          </article>
+
         </div>
       </div>
-      <!-- [FASE 4 END] Gallery ready for GSAP 3D effects in siguiente fase -->
 
       <!-- FIDELIZACIÓN -->
       <div id="fidelizacion-banner" style="display:none;">
@@ -636,6 +746,9 @@
 
   <!-- Cliente Logic -->
   <script src="js/cliente.js"></script>
+
+  <!-- GSAP 3D Effects (FASE 4) -->
+  <script src="js/gsap-3d-effects.js"></script>
 
   <!-- html2pdf.js para generación de PDFs -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
