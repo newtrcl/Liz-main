@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // ── LOGO ──────────────────────────────────────────────────────
 function aplicarLogo() {
-  if (!LOGO_URL) return;
+  if (typeof LOGO_URL === 'undefined' || !LOGO_URL) return;
   const navLogo = document.getElementById('nav-logo');
   if (navLogo) {
     navLogo.innerHTML = `<img src="${LOGO_URL}" alt="${NEGOCIO_NOMBRE}"

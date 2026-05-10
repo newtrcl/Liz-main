@@ -276,6 +276,101 @@ const API = {
       return { ok: false, error: e.message };
     }
   },
+
+  // ── PÚBLICOS (index.html / app.js) ───────────────────────────
+
+  async getServicios() {
+    try {
+      const res = await fetch('/api/servicios', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) return [];
+      return await res.json();
+    } catch (e) {
+      console.error('getServicios error:', e);
+      return [];
+    }
+  },
+
+  async getEmpleados() {
+    try {
+      const res = await fetch('/api/empleados', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) return [];
+      return await res.json();
+    } catch (e) {
+      console.error('getEmpleados error:', e);
+      return [];
+    }
+  },
+
+  async getDisponibilidad(fecha, servicioID) {
+    try {
+      const url = `/api/disponibilidad?fecha=${encodeURIComponent(fecha)}&servicioID=${encodeURIComponent(servicioID)}`;
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) return { ok: false, error: 'Error al obtener disponibilidad' };
+      return await res.json();
+    } catch (e) {
+      console.error('getDisponibilidad error:', e);
+      return { ok: false, error: e.message };
+    }
+  },
+
+  async crearReserva(payload) {
+    try {
+      const res = await fetch('/api/reservas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        return { ok: false, error: data.error || 'Error al crear reserva', status: res.status };
+      }
+      return await res.json();
+    } catch (e) {
+      console.error('crearReserva error:', e);
+      return { ok: false, error: e.message };
+    }
+  },
+
+  async bloquearSlot(empleadoID, fecha, horaInicio, horaFin, sessionToken) {
+    try {
+      const res = await fetch('/api/slots/bloquear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ empleadoID, fecha, horaInicio, horaFin, sessionToken }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        return { ok: false, error: data.error || 'Error al bloquear slot', status: res.status };
+      }
+      return await res.json();
+    } catch (e) {
+      console.error('bloquearSlot error:', e);
+      return { ok: false, error: e.message };
+    }
+  },
+
+  async liberarBloqueo(bloqueoID) {
+    try {
+      const res = await fetch(`/api/slots/bloqueo/${encodeURIComponent(bloqueoID)}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) return { ok: false };
+      return await res.json();
+    } catch (e) {
+      console.error('liberarBloqueo error:', e);
+      return { ok: false, error: e.message };
+    }
+  },
 };
 
 // Export para uso global
