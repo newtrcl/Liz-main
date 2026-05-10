@@ -508,6 +508,101 @@
       <p>Portal de Cliente — Mis Reservas</p>
     </div>
 
+    <!-- ══════════════════════════════════════════════════════
+         GALERÍA DE SERVICIOS — siempre visible (pública)
+         FASE 4: GSAP 3D + Glassmorphism + ScrollTrigger
+         Sin login requerido. No toca mis-reservas-container.
+    ═══════════════════════════════════════════════════════ -->
+    <div class="galeria-servicios" aria-label="Galería de servicios">
+      <h2 class="galeria-titulo">Nuestros Servicios</h2>
+      <p class="galeria-subtitulo">Belleza &amp; Bienestar Integral</p>
+
+      <div class="servicios-grid" id="servicios-grid" role="list">
+
+        <article class="servicio-card" data-gsap-effect="3d" role="listitem">
+          <div class="servicio-card-img" data-gsap-image="true">
+            <img src="img/servicios/coloracion.jpg"
+                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 260%22%3E%3Crect fill=%22%232d2244%22 width=%22400%22 height=%22260%22/%3E%3Ctext x=%22200%22 y=%22130%22 text-anchor=%22middle%22 font-family=%22Georgia%22 font-size=%2224%22 fill=%22%23d4af37%22%3EColoraci%C3%B3n%3C/text%3E%3C/svg%3E'"
+                 alt="Coloración profesional" width="400" height="260" loading="lazy">
+            <div class="servicio-card-overlay" aria-hidden="true">
+              <span class="servicio-card-overlay-text">Ver servicio</span>
+            </div>
+          </div>
+          <div class="servicio-card-content">
+            <h3 class="servicio-card-title">Coloración</h3>
+            <p class="servicio-card-desc">Tintes y decoloraciones con productos premium para un color duradero y vibrante</p>
+            <div class="servicio-card-price">$45.000 – $75.000</div>
+          </div>
+        </article>
+
+        <article class="servicio-card" data-gsap-effect="3d" role="listitem">
+          <div class="servicio-card-img" data-gsap-image="true">
+            <img src="img/servicios/tratamientos.jpg"
+                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 260%22%3E%3Crect fill=%22%232d2244%22 width=%22400%22 height=%22260%22/%3E%3Ctext x=%22200%22 y=%22130%22 text-anchor=%22middle%22 font-family=%22Georgia%22 font-size=%2224%22 fill=%22%23d4af37%22%3ETratamientos%3C/text%3E%3C/svg%3E'"
+                 alt="Tratamientos capilares" width="400" height="260" loading="lazy">
+            <div class="servicio-card-overlay" aria-hidden="true">
+              <span class="servicio-card-overlay-text">Ver servicio</span>
+            </div>
+          </div>
+          <div class="servicio-card-content">
+            <h3 class="servicio-card-title">Tratamientos</h3>
+            <p class="servicio-card-desc">Mascarillas, hidratación y reparación profunda para cabello saludable</p>
+            <div class="servicio-card-price">$30.000 – $50.000</div>
+          </div>
+        </article>
+
+        <article class="servicio-card" data-gsap-effect="3d" role="listitem">
+          <div class="servicio-card-img" data-gsap-image="true">
+            <img src="img/servicios/corte.jpg"
+                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 260%22%3E%3Crect fill=%22%232d2244%22 width=%22400%22 height=%22260%22/%3E%3Ctext x=%22200%22 y=%22130%22 text-anchor=%22middle%22 font-family=%22Georgia%22 font-size=%2224%22 fill=%22%23d4af37%22%3ECorte%3C/text%3E%3C/svg%3E'"
+                 alt="Corte y peinado" width="400" height="260" loading="lazy">
+            <div class="servicio-card-overlay" aria-hidden="true">
+              <span class="servicio-card-overlay-text">Ver servicio</span>
+            </div>
+          </div>
+          <div class="servicio-card-content">
+            <h3 class="servicio-card-title">Corte &amp; Peinado</h3>
+            <p class="servicio-card-desc">Cortes modernos y peinados para cualquier ocasión con asesoría experta</p>
+            <div class="servicio-card-price">$20.000 – $40.000</div>
+          </div>
+        </article>
+
+        <article class="servicio-card" data-gsap-effect="3d" role="listitem">
+          <div class="servicio-card-img" data-gsap-image="true">
+            <img src="img/servicios/manicura.jpg"
+                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 260%22%3E%3Crect fill=%22%232d2244%22 width=%22400%22 height=%22260%22/%3E%3Ctext x=%22200%22 y=%22130%22 text-anchor=%22middle%22 font-family=%22Georgia%22 font-size=%2224%22 fill=%22%23d4af37%22%3EManicura%3C/text%3E%3C/svg%3E'"
+                 alt="Manicura y pedicura" width="400" height="260" loading="lazy">
+            <div class="servicio-card-overlay" aria-hidden="true">
+              <span class="servicio-card-overlay-text">Ver servicio</span>
+            </div>
+          </div>
+          <div class="servicio-card-content">
+            <h3 class="servicio-card-title">Manicura &amp; Pedicura</h3>
+            <p class="servicio-card-desc">Cuidado completo de manos y pies con diseños y acabados profesionales</p>
+            <div class="servicio-card-price">$15.000 – $35.000</div>
+          </div>
+        </article>
+
+        <article class="servicio-card" data-gsap-effect="3d" role="listitem">
+          <div class="servicio-card-img" data-gsap-image="true">
+            <img src="img/servicios/depilacion.jpg"
+                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 260%22%3E%3Crect fill=%22%232d2244%22 width=%22400%22 height=%22260%22/%3E%3Ctext x=%22200%22 y=%22130%22 text-anchor=%22middle%22 font-family=%22Georgia%22 font-size=%2224%22 fill=%22%23d4af37%22%3EDepilaci%C3%B3n%3C/text%3E%3C/svg%3E'"
+                 alt="Depilación profesional" width="400" height="260" loading="lazy">
+            <div class="servicio-card-overlay" aria-hidden="true">
+              <span class="servicio-card-overlay-text">Ver servicio</span>
+            </div>
+          </div>
+          <div class="servicio-card-content">
+            <h3 class="servicio-card-title">Depilación</h3>
+            <p class="servicio-card-desc">Depilación con cera y métodos modernos para piel suave y cuidada</p>
+            <div class="servicio-card-price">$10.000 – $30.000</div>
+          </div>
+        </article>
+
+      </div>
+    </div>
+    <!-- FIN GALERÍA PÚBLICA ══════════════════════════════════ -->
+
     <!-- LOGIN FORM -->
     <div id="login-container">
       <h2>Mis Reservas</h2>
@@ -574,122 +669,6 @@
               Limpiar
             </button>
           </div>
-        </div>
-      </div>
-
-      <!-- GALERÍA DE SERVICIOS — FASE 4: GSAP 3D + Glassmorphism -->
-      <!-- Fuentes: Playfair Display + Inter | Easing: cubic-bezier(0.16,1,0.3,1) | Stagger: 40ms -->
-      <div class="galeria-servicios" aria-label="Galería de servicios">
-        <h2 class="galeria-titulo">Nuestros Servicios</h2>
-        <p class="galeria-subtitulo">Belleza &amp; Bienestar Integral</p>
-
-        <div class="servicios-grid" id="servicios-grid" role="list">
-
-          <!-- Servicio 1: Coloración — placeholder, reemplazar con imagen real de Gemini -->
-          <article class="servicio-card" data-gsap-effect="3d" role="listitem">
-            <div class="servicio-card-img" data-gsap-image="true">
-              <img
-                src="img/servicios/coloracion.jpg"
-                onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 260%22%3E%3Crect fill=%22%232d2244%22 width=%22400%22 height=%22260%22/%3E%3Crect fill=%22%23d4af37%22 opacity=%220.15%22 width=%22400%22 height=%22260%22/%3E%3Ctext x=%22200%22 y=%22120%22 text-anchor=%22middle%22 font-family=%22Georgia,serif%22 font-size=%2228%22 fill=%22%23d4af37%22 opacity=%220.6%22%3EColoración%3C/text%3E%3Ctext x=%22200%22 y=%22155%22 text-anchor=%22middle%22 font-family=%22Georgia,serif%22 font-size=%2214%22 fill=%22rgba(255,255,255,0.35)%22%3EPronto imagen real%3C/text%3E%3C/svg%3E'"
-                alt="Servicio de coloración profesional en Belleza Integral"
-                width="400" height="260"
-                loading="lazy"
-              />
-              <div class="servicio-card-overlay" aria-hidden="true">
-                <span class="servicio-card-overlay-text">Ver servicio</span>
-              </div>
-            </div>
-            <div class="servicio-card-content">
-              <h3 class="servicio-card-title">Coloración</h3>
-              <p class="servicio-card-desc">Tintes y decoloraciones con productos premium para un color duradero y vibrante</p>
-              <div class="servicio-card-price">$45.000 – $75.000</div>
-            </div>
-          </article>
-
-          <!-- Servicio 2: Tratamientos -->
-          <article class="servicio-card" data-gsap-effect="3d" role="listitem">
-            <div class="servicio-card-img" data-gsap-image="true">
-              <img
-                src="img/servicios/tratamientos.jpg"
-                onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 260%22%3E%3Crect fill=%22%232d2244%22 width=%22400%22 height=%22260%22/%3E%3Crect fill=%22%23d4af37%22 opacity=%220.15%22 width=%22400%22 height=%22260%22/%3E%3Ctext x=%22200%22 y=%22120%22 text-anchor=%22middle%22 font-family=%22Georgia,serif%22 font-size=%2228%22 fill=%22%23d4af37%22 opacity=%220.6%22%3ETratamientos%3C/text%3E%3Ctext x=%22200%22 y=%22155%22 text-anchor=%22middle%22 font-family=%22Georgia,serif%22 font-size=%2214%22 fill=%22rgba(255,255,255,0.35)%22%3EPronto imagen real%3C/text%3E%3C/svg%3E'"
-                alt="Tratamientos capilares en Belleza Integral"
-                width="400" height="260"
-                loading="lazy"
-              />
-              <div class="servicio-card-overlay" aria-hidden="true">
-                <span class="servicio-card-overlay-text">Ver servicio</span>
-              </div>
-            </div>
-            <div class="servicio-card-content">
-              <h3 class="servicio-card-title">Tratamientos</h3>
-              <p class="servicio-card-desc">Mascarillas, hidratación y reparación profunda para cabello saludable</p>
-              <div class="servicio-card-price">$30.000 – $50.000</div>
-            </div>
-          </article>
-
-          <!-- Servicio 3: Corte y Peinado -->
-          <article class="servicio-card" data-gsap-effect="3d" role="listitem">
-            <div class="servicio-card-img" data-gsap-image="true">
-              <img
-                src="img/servicios/corte.jpg"
-                onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 260%22%3E%3Crect fill=%22%232d2244%22 width=%22400%22 height=%22260%22/%3E%3Crect fill=%22%23d4af37%22 opacity=%220.15%22 width=%22400%22 height=%22260%22/%3E%3Ctext x=%22200%22 y=%22120%22 text-anchor=%22middle%22 font-family=%22Georgia,serif%22 font-size=%2228%22 fill=%22%23d4af37%22 opacity=%220.6%22%3ECorte%3C/text%3E%3Ctext x=%22200%22 y=%22155%22 text-anchor=%22middle%22 font-family=%22Georgia,serif%22 font-size=%2214%22 fill=%22rgba(255,255,255,0.35)%22%3EPronto imagen real%3C/text%3E%3C/svg%3E'"
-                alt="Corte y peinado profesional en Belleza Integral"
-                width="400" height="260"
-                loading="lazy"
-              />
-              <div class="servicio-card-overlay" aria-hidden="true">
-                <span class="servicio-card-overlay-text">Ver servicio</span>
-              </div>
-            </div>
-            <div class="servicio-card-content">
-              <h3 class="servicio-card-title">Corte &amp; Peinado</h3>
-              <p class="servicio-card-desc">Cortes modernos y peinados para cualquier ocasión con asesoría experta</p>
-              <div class="servicio-card-price">$20.000 – $40.000</div>
-            </div>
-          </article>
-
-          <!-- Servicio 4: Manicura/Pedicura -->
-          <article class="servicio-card" data-gsap-effect="3d" role="listitem">
-            <div class="servicio-card-img" data-gsap-image="true">
-              <img
-                src="img/servicios/manicura.jpg"
-                onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 260%22%3E%3Crect fill=%22%232d2244%22 width=%22400%22 height=%22260%22/%3E%3Crect fill=%22%23d4af37%22 opacity=%220.15%22 width=%22400%22 height=%22260%22/%3E%3Ctext x=%22200%22 y=%22120%22 text-anchor=%22middle%22 font-family=%22Georgia,serif%22 font-size=%2228%22 fill=%22%23d4af37%22 opacity=%220.6%22%3EManicura%3C/text%3E%3Ctext x=%22200%22 y=%22155%22 text-anchor=%22middle%22 font-family=%22Georgia,serif%22 font-size=%2214%22 fill=%22rgba(255,255,255,0.35)%22%3EPronto imagen real%3C/text%3E%3C/svg%3E'"
-                alt="Manicura y pedicura profesional en Belleza Integral"
-                width="400" height="260"
-                loading="lazy"
-              />
-              <div class="servicio-card-overlay" aria-hidden="true">
-                <span class="servicio-card-overlay-text">Ver servicio</span>
-              </div>
-            </div>
-            <div class="servicio-card-content">
-              <h3 class="servicio-card-title">Manicura &amp; Pedicura</h3>
-              <p class="servicio-card-desc">Cuidado completo de manos y pies con diseños y acabados profesionales</p>
-              <div class="servicio-card-price">$15.000 – $35.000</div>
-            </div>
-          </article>
-
-          <!-- Servicio 5: Depilación -->
-          <article class="servicio-card" data-gsap-effect="3d" role="listitem">
-            <div class="servicio-card-img" data-gsap-image="true">
-              <img
-                src="img/servicios/depilacion.jpg"
-                onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 260%22%3E%3Crect fill=%22%232d2244%22 width=%22400%22 height=%22260%22/%3E%3Crect fill=%22%23d4af37%22 opacity=%220.15%22 width=%22400%22 height=%22260%22/%3E%3Ctext x=%22200%22 y=%22120%22 text-anchor=%22middle%22 font-family=%22Georgia,serif%22 font-size=%2228%22 fill=%22%23d4af37%22 opacity=%220.6%22%3EDepilaci%C3%B3n%3C/text%3E%3Ctext x=%22200%22 y=%22155%22 text-anchor=%22middle%22 font-family=%22Georgia,serif%22 font-size=%2214%22 fill=%22rgba(255,255,255,0.35)%22%3EPronto imagen real%3C/text%3E%3C/svg%3E'"
-                alt="Depilación profesional en Belleza Integral"
-                width="400" height="260"
-                loading="lazy"
-              />
-              <div class="servicio-card-overlay" aria-hidden="true">
-                <span class="servicio-card-overlay-text">Ver servicio</span>
-              </div>
-            </div>
-            <div class="servicio-card-content">
-              <h3 class="servicio-card-title">Depilación</h3>
-              <p class="servicio-card-desc">Depilación con cera y métodos modernos para piel suave y cuidada</p>
-              <div class="servicio-card-price">$10.000 – $30.000</div>
-            </div>
-          </article>
-
         </div>
       </div>
 
