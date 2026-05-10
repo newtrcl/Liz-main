@@ -243,25 +243,6 @@ const API = {
     }
   },
 
-  async getReportesGraficos(desde, hasta) {
-    try {
-      const url = `/api/admin/reportes/grafico-datos?desde=${encodeURIComponent(desde)}&hasta=${encodeURIComponent(hasta)}`;
-      const res = await fetch(url, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        return { ok: false, error: data.error || 'Error al cargar gráficos', status: res.status };
-      }
-      return await res.json();
-    } catch (e) {
-      console.error('getReportesGraficos error:', e);
-      return { ok: false, error: e.message };
-    }
-  },
-
   // ── ADMIN LOGIN ──────────────────────────────────────────
   async adminLogin(password) {
     try {

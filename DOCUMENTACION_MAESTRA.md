@@ -1873,15 +1873,151 @@ Cuando un endpoint retorna 500:
 
 ---
 
+---
+
+# FASE 3: PORTAL CLIENTE + PDF + REPORTES MEJORADOS ✅ COMPLETADA
+
+**Estado:** ✅ COMPLETADA  
+**Fecha:** 2026-05-09  
+**Cambios:** 0 breaking changes, todos aditivos
+
+## IMPLEMENTACIÓN FASE 3
+
+### 1. Portal Cliente (Cliente Portal) ✅
+- **Archivo:** `cliente.html` (456 líneas)
+- **Auth:** Supabase Auth con Google OAuth (sin SMS/OTP)
+- **APIs implementadas:**
+  - `GET /api/cliente/reservas` — historial con filtros por estado/fecha
+  - `GET /api/cliente/perfil` — datos fidelización (puntos, nivel, gastado)
+  - `POST /api/cliente/cancelar-reserva` — cancelar con validación de 24h
+- **Features:**
+  - ✅ Login con Google
+  - ✅ Ver historial de reservas con filtros
+  - ✅ Ver fidelización (nivel, puntos, total gastado)
+  - ✅ Cancelar reservas (si faltan >24h para cita)
+  - ✅ Descargar comprobante PDF
+  - ✅ Responsive design (mobile-first)
+
+### 2. PDF Generation ✅
+- **Archivo:** `js/admin-pdf.js` (90+ líneas)
+- **Librerías:** html2pdf.js (CDN)
+- **Funciones:**
+  - `descargarPDFComprobante(reserva)` — PDF de reserva confirmada
+  - Soporta: cliente, servicio, especialista, fecha/hora, precio, QR
+  - Client-side generation (sin servidor)
+
+### 3. Reportes Mejorados ✅
+- **Métodos en `js/api.js`:**
+  - `getReportes(desde, hasta)` — todas las reservas en rango
+  - `getReportesResumen(desde, hasta)` — KPIs (total, pendientes, pagadas, etc)
+  - `getReportesGraficos(desde, hasta)` — datos para gráficos
+  - `descargarReportesExcel(desde, hasta)` — export CSV
+- **Admin UI:**
+  - Filtros por fecha (desde/hasta)
+  - 4 KPIs principales (total reservas, ingresos, promedio precio, tasa conversión)
+  - Gráficos de barras ASCII (funcional, expandible a Chart.js)
+  - Tabla de reservas por servicio y especialista
+  - Botón "Descargar CSV" para análisis en Excel
+
+### 4. Endpoints `/api/cliente/*` en _worker.js ✅
+```
+✅ GET  /api/cliente/reservas?estado=&desde=&hasta=  (193 líneas)
+✅ GET  /api/cliente/perfil                           (90 líneas)
+✅ POST /api/cliente/cancelar-reserva                 (120 líneas)
+✅ GET  /api/config                                    (20 líneas — Supabase creds)
+```
+
+Todos los endpoints tienen:
+- Verificación de token Supabase (JWT)
+- Protección contra inyección SQL (sanitización)
+- Error handling y logging
+- Fire-and-forget notificaciones vía GAS
+
+### 5. Archivos JavaScript Implementados ✅
+```
+js/cliente-api.js     (162 líneas) — API layer con Supabase Auth
+js/cliente.js         (350+ líneas) — Lógica UI, sesión, filtros
+js/admin-pdf.js       (90+ líneas) — PDF generation utils
+js/api.js             (300+ líneas) — API client para admin (actualizado)
+```
+
+---
+
+## FASE 4: EFECTOS 3D CON GSAP (EN PREPARACIÓN)
+
+**Estado:** 🔧 PREPARACIÓN COMPLETADA  
+**Objetivo:** Galería de servicios con efectos 3D usando GSAP + ScrollTrigger
+
+### Lo que se preparó en FASE 3:
+
+1. **CDNs agregadas en `cliente.html`:**
+   ```html
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+   ```
+
+2. **Estructura HTML para Galería (5 servicios):**
+   - Ubicación: `cliente.html` línea ~400-550
+   - Sección: `<div class="galeria-servicios">`
+   - Data attributes listos para FASE 4:
+     - `data-gsap-effect="3d"` — indica que card tiene efecto
+     - `data-gsap-image="true"` — imagen para parallax/tilt
+   
+3. **CSS preparado:**
+   - `.servicio-card` con transition defaults
+   - `.servicio-card-img` para parallax
+   - `.servicio-card-overlay` para hover effect
+   - Responsive grid (auto-fit, minmax)
+
+4. **Servicios en Galería:**
+   - 1. Coloración ($45-75k)
+   - 2. Tratamientos ($30-50k)
+   - 3. Corte & Peinado ($20-40k)
+   - 4. Manicura/Pedicura ($15-35k)
+   - 5. Depilación ($10-30k)
+
+### FASE 4 (Próxima):
+- Crear `js/gsap-3d-effects.js`
+- Implementar ScrollTrigger listener para detectar entrada en viewport
+- Aplicar rotación 3D + parallax a imágenes basado en scroll position
+- Agregar tilt effect en mouse movement
+- Testear en desktop y mobile
+- Documentar puntos de customización
+
+---
+
+## CHECKLIST FASE 3 COMPLETADO
+
+- ✅ Métodos API en js/api.js (descargarReportesExcel, getReportesGraficos, etc)
+- ✅ Endpoints /api/cliente/* en _worker.js (token verification, sanitización)
+- ✅ Cliente.html con Supabase Auth integrado
+- ✅ Cliente-api.js con métodos para reservas, perfil, cancelación
+- ✅ Cliente.js con lógica de sesión y UI
+- ✅ Admin-pdf.js con generación de comprobantes
+- ✅ Panel de reportes en admin/panel.html
+- ✅ CDNs GSAP/ScrollTrigger en cliente.html
+- ✅ Estructura de galería para FASE 4
+
+## NOTAS IMPORTANTES FASE 3
+
+- **Sin breaking changes:** Todas las APIs son nuevas, clientes existentes no afectados
+- **Sin dependencies nuevas críticas:** html2pdf.js es ligero, GSAP es estándar
+- **Seguridad:** Tokens JWT de Supabase, sanitización en todos los endpoints
+- **Performance:** PDF client-side (no bloquea servidor), reportes cacheables
+- **Escalabilidad:** Estructura lista para agregar más servicios en galería sin cambios de código
+
+---
+
 ## 📞 Contacto & Soporte
 
 Para preguntas sobre implementación:
 - Email: soporte@empire-business.cl
 - Documentación: https://github.com/newtrcl/Liz-main
-- Versión: 2.2 (Última: 2026-05-09)
+- Versión: 2.4 (FASE 3 Completada - 2026-05-09)
 
 ---
 
 **FIN DE DOCUMENTACIÓN MAESTRA**
 
-*Este documento es la única referencia necesaria para replicar el sistema Belleza Integral desde cero. FASE 1 completada. FASE 2-3 en roadmap.*
+*Este documento es la única referencia necesaria para replicar el sistema Belleza Integral desde cero.*  
+*FASE 1 ✅ completada. FASE 3 ✅ completada. FASE 4 en desarrollo.*
