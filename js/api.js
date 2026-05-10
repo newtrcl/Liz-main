@@ -216,6 +216,52 @@ const API = {
     }
   },
 
+  // ── REPORTES ─────────────────────────────────────────────
+  async descargarReportesExcel(desde, hasta) {
+    try {
+      const url = `/api/admin/reportes/excel?desde=${encodeURIComponent(desde)}&hasta=${encodeURIComponent(hasta)}`;
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        return { ok: false, error: data.error || 'Error al descargar reportes', status: res.status };
+      }
+      // Descargar como archivo CSV
+      const blob = await res.blob();
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `reportes-${desde}_${hasta}.csv`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      return { ok: true };
+    } catch (e) {
+      console.error('descargarReportesExcel error:', e);
+      return { ok: false, error: e.message };
+    }
+  },
+
+  async getReportesGraficos(desde, hasta) {
+    try {
+      const url = `/api/admin/reportes/grafico-datos?desde=${encodeURIComponent(desde)}&hasta=${encodeURIComponent(hasta)}`;
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        return { ok: false, error: data.error || 'Error al cargar gráficos', status: res.status };
+      }
+      return await res.json();
+    } catch (e) {
+      console.error('getReportesGraficos error:', e);
+      return { ok: false, error: e.message };
+    }
+  },
+
   // ── ADMIN LOGIN ──────────────────────────────────────────
   async adminLogin(password) {
     try {
