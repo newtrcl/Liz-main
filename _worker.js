@@ -699,6 +699,31 @@ async function handleCrearReserva(env, cors, request, ctx) {
     },
   }));
 
+  // ── SIEM: Notificar evento de reserva creada
+  if (env.APPS_SCRIPT_URL && env.WEBHOOK_SECRET) {
+    ctx.waitUntil(
+      fetch(env.APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accion: 'siemEventoLiz',
+          secret: env.WEBHOOK_SECRET,
+          departamento: 'liz-belleza',
+          tipo: 'reserva_creada',
+          timestamp: new Date().toISOString(),
+          reservaID,
+          cliente: nombre,
+          servicio: srv.nombre,
+          empleado: emp.nombre,
+          estado: 'Pendiente',
+          monto: precioFinal,
+          duracion: srv.duracion,
+          notas: 'Creada por cliente'
+        })
+      }).catch(e => console.error('SIEM error:', e))
+    );
+  }
+
   return json({
     ok: true, reservaID,
     reserva: { nombre, servicioNombre: srv.nombre, empleadoNombre: emp.nombre, fecha, horaInicio, horaFin },
@@ -1293,6 +1318,31 @@ async function handleAdminActualizarEstado(env, cors, request, ctx) {
           precio: parseFloat(reserva.precio || 0),
         },
       }));
+
+      // ── SIEM: Notificar pago confirmado
+      if (env.APPS_SCRIPT_URL && env.WEBHOOK_SECRET) {
+        ctx.waitUntil(
+          fetch(env.APPS_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              accion: 'siemEventoLiz',
+              secret: env.WEBHOOK_SECRET,
+              departamento: 'liz-belleza',
+              tipo: 'pago_confirmado',
+              timestamp: new Date().toISOString(),
+              reservaID: reserva.id,
+              cliente: reserva.nombre,
+              servicio: reserva.servicio_nombre,
+              empleado: reserva.empleado_nombre,
+              estado: 'Pagada',
+              monto: parseFloat(reserva.precio || 0),
+              duracion: reserva.duracion,
+              notas: 'Pago confirmado por admin'
+            })
+          }).catch(e => console.error('SIEM error:', e))
+        );
+      }
     } else {
       console.warn('ctx.waitUntil not available, notifications may not be sent');
     }
@@ -1316,6 +1366,31 @@ async function handleAdminActualizarEstado(env, cors, request, ctx) {
           fecha: reserva.fecha,
         },
       }));
+
+      // ── SIEM: Notificar reserva completada
+      if (env.APPS_SCRIPT_URL && env.WEBHOOK_SECRET) {
+        ctx.waitUntil(
+          fetch(env.APPS_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              accion: 'siemEventoLiz',
+              secret: env.WEBHOOK_SECRET,
+              departamento: 'liz-belleza',
+              tipo: 'reserva_completada',
+              timestamp: new Date().toISOString(),
+              reservaID: reserva.id,
+              cliente: reserva.nombre,
+              servicio: reserva.servicio_nombre,
+              empleado: reserva.empleado_nombre,
+              estado: 'Completada',
+              monto: parseFloat(reserva.precio || 0),
+              duracion: reserva.duracion,
+              notas: 'Servicio completado'
+            })
+          }).catch(e => console.error('SIEM error:', e))
+        );
+      }
     }
   } else if (estado === 'Cancelada' && estadoAnterior !== 'Cancelada') {
     if (ctx && ctx.waitUntil) {
@@ -1335,6 +1410,31 @@ async function handleAdminActualizarEstado(env, cors, request, ctx) {
           horaFin: reserva.hora_fin,
         },
       }));
+
+      // ── SIEM: Notificar cancelación
+      if (env.APPS_SCRIPT_URL && env.WEBHOOK_SECRET) {
+        ctx.waitUntil(
+          fetch(env.APPS_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              accion: 'siemEventoLiz',
+              secret: env.WEBHOOK_SECRET,
+              departamento: 'liz-belleza',
+              tipo: 'reserva_cancelada',
+              timestamp: new Date().toISOString(),
+              reservaID: reserva.id,
+              cliente: reserva.nombre,
+              servicio: reserva.servicio_nombre,
+              empleado: reserva.empleado_nombre,
+              estado: 'Cancelada',
+              monto: parseFloat(reserva.precio || 0),
+              duracion: reserva.duracion,
+              notas: 'Cancelada por admin'
+            })
+          }).catch(e => console.error('SIEM error:', e))
+        );
+      }
     }
   } else {
     // Cambio genérico (sin email especial)
@@ -1638,6 +1738,33 @@ export default {
           return handleAdminListGiftCards(env, cors);
         if (method === 'GET'  && path === '/api/admin/fidelizacion')
           return handleAdminFidelizacion(env, cors, url);
+
+        // ── SIEM ──────────────────────────────────────
+        if (method === 'POST' && path === '/api/siem/event') {
+          let body;
+          try { body = await request.json(); }
+          catch { return json({ error: 'JSON inválido' }, 400, cors); }
+
+          if (body.secret !== env.WEBHOOK_SECRET) {
+            return json({ error: 'Unauthorized' }, 401, cors);
+          }
+
+          if (env.APPS_SCRIPT_URL) {
+            ctx.waitUntil(
+              fetch(env.APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  accion: 'siemEventoLiz',
+                  secret: env.WEBHOOK_SECRET,
+                  ...body
+                })
+              }).catch(e => console.error('SIEM notify error:', e))
+            );
+          }
+
+          return json({ ok: true }, 200, cors);
+        }
 
         return json({ ok: false, error: 'Ruta no encontrada' }, 404, cors);
 
