@@ -25,3 +25,13 @@ Thumbs.db
 dist/
 *.zip
 *.bak
+
+# ── Multi-tenant SaaS ─────────────────────────────────────────
+wrangler.local.toml
+.env.local
+.env.production.local
+
+# ── Temporary ─────────────────────────────────────────────────
+.claude/plans/
+test-*.js
+*.test.js

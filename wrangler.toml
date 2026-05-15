@@ -1,30 +1,35 @@
-# ================================================================
-# Belleza Integral — Cloudflare Workers + Assets
-# Deploy : wrangler deploy
-# Secrets: ver DEPLOY.md sección 2b
-# ================================================================
-
-name               = "liz-belleza"
-main               = "_worker.js"
+name = "liz-saas"
+main = "src/_worker.js"
 compatibility_date = "2025-01-01"
+workers_dev = true
 
-[assets]
-directory = "."
-binding   = "ASSETS"
+# ══════════════════════════════════════════════════════════
+# PRODUCCIÓN
+# ══════════════════════════════════════════════════════════
 
-# ── Variables públicas (no secretas) ─────────────────────────
-[vars]
-SUPABASE_URL = "https://dkryjxgjqmikrhusxsau.supabase.co"
-SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrcnlqeGdqcW1pa3JodXN4c2F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MTc2NDksImV4cCI6MjA5MzQ5MzY0OX0.itkOk5FzP_-mn8LD3N572OAZk67sh_4z_YMnMR-8gSM"
+[env.production]
+
+[env.production.vars]
+# Nueva Supabase centralizada - Multi-tenant
+SUPABASE_URL = "https://oljmpzjpbwwomuqwipba.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sam1wempwYnd3b211cXdpcGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4MzU3MTQsImV4cCI6MjA5NDQxMTcxNH0.Ft3GY1cjbKFHAykyCMLvPygh8GiT-ygZvvmnfSdPu5U"
+
+# Google Apps Script webhook
 APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwA6UGJonNe7L9p6ipmo3j24Q9q5g_tSbA4DnHA1fNIoRGpL2crxXmdW4QhhIdkBhow/exec"
 
-# ── Cron: auto-cancelar reservas sin pago cada 30 min ────────
-[triggers]
-crons = ["*/30 * * * *"]
+[env.production.triggers]
+# Cron: Validar trials + notificaciones
+crons = ["0 9 * * *"]
 
-# ── KV para rate-limiting (opcional) ─────────────────────────
-# 1. Crea el namespace: wrangler kv namespace create RATE_KV
-# 2. Descomenta y reemplaza el ID:
-# [[kv_namespaces]]
-# binding = "RATE_KV"
-# id      = "REEMPLAZA_CON_TU_KV_ID"
+[env.production.secrets]
+# Configurar MANUALMENTE en Cloudflare Dashboard:
+# SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+# ADMIN_SECRET = "..."
+# WEBHOOK_SECRET = "..."
+
+# ══════════════════════════════════════════════════════════
+# DESARROLLO LOCAL
+# ══════════════════════════════════════════════════════════
+
+[env.development]
+name = "liz-saas-dev"

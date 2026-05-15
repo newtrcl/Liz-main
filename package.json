@@ -1,0 +1,28 @@
+{
+  "name": "liz-saas",
+  "version": "1.0.0",
+  "description": "Multi-tenant SaaS platform for salon management",
+  "type": "module",
+  "main": "src/_worker.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:prod": "wrangler deploy --env production",
+    "db:migrate": "echo 'Run migrations manually in Supabase'",
+    "db:seed": "echo 'Run seed data manually in Supabase'"
+  },
+  "keywords": [
+    "saas",
+    "multi-tenant",
+    "salon",
+    "scheduling"
+  ],
+  "author": "NewTrader Dev",
+  "license": "MIT",
+  "dependencies": {
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/wrangler": "^3.0.0"
+  }
+}
