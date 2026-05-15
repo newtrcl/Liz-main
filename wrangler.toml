@@ -3,9 +3,26 @@ main = "src/_worker.js"
 compatibility_date = "2025-01-01"
 workers_dev = true
 
-# ══════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════════════════════
+# DESARROLLO LOCAL
+# ════════════════════════════════════════════════════════════════════════════════
+
+[env.development]
+name = "liz-saas-dev"
+
+[env.development.vars]
+SUPABASE_URL = "https://oljmpzjpbwwomuqwipba.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sam1wempwYnd3b211cXdpcGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4MzU3MTQsImV4cCI6MjA5NDQxMTcxNH0.Ft3GY1cjbKFHAykyCMLvPygh8GiT-ygZvvmnfSdPu5U"
+
+[env.development.secrets]
+# Configurar en wrangler.local.toml o en Cloudflare Dashboard
+# SUPABASE_SERVICE_KEY = "..."
+# SESSION_SECRET = "dev-secret-change-in-production"
+# JWT_SECRET = "jwt-dev-secret"
+
+# ════════════════════════════════════════════════════════════════════════════════
 # PRODUCCIÓN
-# ══════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════════════════════
 
 [env.production]
 
@@ -14,22 +31,40 @@ workers_dev = true
 SUPABASE_URL = "https://oljmpzjpbwwomuqwipba.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sam1wempwYnd3b211cXdpcGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4MzU3MTQsImV4cCI6MjA5NDQxMTcxNH0.Ft3GY1cjbKFHAykyCMLvPygh8GiT-ygZvvmnfSdPu5U"
 
-# Google Apps Script webhook
+# Google Apps Script webhook (para notificaciones)
 APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwA6UGJonNe7L9p6ipmo3j24Q9q5g_tSbA4DnHA1fNIoRGpL2crxXmdW4QhhIdkBhow/exec"
 
 [env.production.triggers]
-# Cron: Validar trials + notificaciones
+# Cron: Validar trials + renovaciones diarias a las 9 AM UTC
 crons = ["0 9 * * *"]
 
 [env.production.secrets]
-# Configurar MANUALMENTE en Cloudflare Dashboard:
-# SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-# ADMIN_SECRET = "..."
-# WEBHOOK_SECRET = "..."
+# IMPORTANTE: Configurar MANUALMENTE en Cloudflare Dashboard
+# Settings → Environment Variables → Secrets
+#
+# SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." (de Supabase)
+# SESSION_SECRET = "algo-secreto-aleatorio" (usar openssl rand -hex 32)
+# JWT_SECRET = "algo-secreto-jwt" (usar openssl rand -hex 32)
 
-# ══════════════════════════════════════════════════════════
-# DESARROLLO LOCAL
-# ══════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════════════════════
+# BUILD CONFIGURATION
+# ════════════════════════════════════════════════════════════════════════════════
 
-[env.development]
-name = "liz-saas-dev"
+[build]
+command = "npm install"
+cwd = "."
+watch_paths = ["src/**/*.js"]
+
+[build.upload]
+format = "modules"
+dir = "src"
+main = "_worker.js"
+
+# ════════════════════════════════════════════════════════════════════════════════
+# KV NAMESPACES (OPTIONAL - para caché de tenant config)
+# ════════════════════════════════════════════════════════════════════════════════
+
+# [[kv_namespaces]]
+# binding = "TENANT_CACHE"
+# id = "abc123def456"
+# preview_id = "xyz789"

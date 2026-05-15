@@ -5,11 +5,15 @@
   "type": "module",
   "main": "src/_worker.js",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "dev": "wrangler dev --local",
+    "dev:remote": "wrangler dev",
+    "deploy": "wrangler deploy --env development",
     "deploy:prod": "wrangler deploy --env production",
-    "db:migrate": "echo 'Run migrations manually in Supabase'",
-    "db:seed": "echo 'Run seed data manually in Supabase'"
+    "deploy:dry": "wrangler deploy --dry-run",
+    "db:migrate": "echo 'Execute migrations manually in Supabase Dashboard or via psql'",
+    "db:seed": "echo 'Execute seed-demo.sql manually in Supabase Dashboard'",
+    "test": "echo 'Integration tests coming soon'",
+    "lint": "echo 'Linting configured in next phase'"
   },
   "keywords": [
     "saas",

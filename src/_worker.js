@@ -9,6 +9,27 @@
  */
 
 import { getTenantFromRequest, loadTenantConfig } from './middleware/tenant-detection.js';
+import {
+  handleGetServicios,
+  handleGetEmpleados,
+  handleGetDisponibilidad,
+  handleCrearReserva,
+  handleGetReserva
+} from './routes/public.js';
+import {
+  handleClienteGetReservas,
+  handleClienteGetFidelizacion,
+  handleClienteGetGiftCards,
+  handleClienteCancelarReserva
+} from './routes/client.js';
+import {
+  handleAdminDashboard,
+  handleAdminGetReservas,
+  handleAdminConfirmarReserva,
+  handleAdminGetServicios,
+  handleAdminCrearServicio,
+  handleAdminGetEmpleados
+} from './routes/admin.js';
 
 export default {
   async fetch(request, env, ctx) {
@@ -37,14 +58,17 @@ export default {
 
       // PASO 3: Routing según pathname
       const pathname = url.pathname;
+      const method = request.method;
 
-      // Endpoints públicos
+      // ENDPOINTS PÚBLICOS
       if (pathname === '/' || pathname === '') {
         return serveIndex(request, tenant);
       }
+
       if (pathname === '/api/health') {
         return json({ ok: true, tenant: tenant.slug }, 200);
       }
+
       if (pathname === '/api/config') {
         return json({
           tenant: tenant.slug,
@@ -53,20 +77,93 @@ export default {
         }, 200);
       }
 
-      // Endpoints protegidos (por implementar en Fase 3)
-      if (pathname.startsWith('/api/')) {
-        return json({ error: 'API endpoint not implemented yet' }, 501);
+      if (pathname === '/api/servicios' && method === 'GET') {
+        return handleGetServicios(request, env, tenant);
       }
 
-      // Archivos estáticos HTML
+      if (pathname === '/api/empleados' && method === 'GET') {
+        return handleGetEmpleados(request, env, tenant);
+      }
+
+      if (pathname === '/api/disponibilidad' && method === 'GET') {
+        return handleGetDisponibilidad(request, env, tenant);
+      }
+
+      if (pathname === '/api/reservas' && method === 'POST') {
+        return handleCrearReserva(request, env, tenant);
+      }
+
+      // GET /api/reservas/:id
+      if (pathname.startsWith('/api/reservas/') && method === 'GET') {
+        const reservaId = pathname.split('/')[3];
+        return handleGetReserva(request, env, tenant, reservaId);
+      }
+
+      // ENDPOINTS CLIENTE (protegidos con JWT)
+      if (pathname === '/api/cliente/reservas' && method === 'GET') {
+        return handleClienteGetReservas(request, env, tenant);
+      }
+
+      if (pathname === '/api/cliente/fidelizacion' && method === 'GET') {
+        return handleClienteGetFidelizacion(request, env, tenant);
+      }
+
+      if (pathname === '/api/cliente/gift-cards' && method === 'GET') {
+        return handleClienteGetGiftCards(request, env, tenant);
+      }
+
+      if (pathname.startsWith('/api/cliente/reservas/') && method === 'POST') {
+        const parts = pathname.split('/');
+        const reservaId = parts[4];
+        const action = parts[5]; // 'cancelar'
+
+        if (action === 'cancelar') {
+          return handleClienteCancelarReserva(request, env, tenant, reservaId);
+        }
+      }
+
+      // ENDPOINTS ADMIN (protegidos con cookie)
+      if (pathname === '/api/admin/dashboard' && method === 'GET') {
+        return handleAdminDashboard(request, env, tenant);
+      }
+
+      if (pathname === '/api/admin/reservas' && method === 'GET') {
+        return handleAdminGetReservas(request, env, tenant);
+      }
+
+      if (pathname.startsWith('/api/admin/reservas/') && method === 'POST') {
+        const parts = pathname.split('/');
+        const reservaId = parts[4];
+        const action = parts[5]; // 'confirmar'
+
+        if (action === 'confirmar') {
+          return handleAdminConfirmarReserva(request, env, tenant, reservaId);
+        }
+      }
+
+      if (pathname === '/api/admin/servicios' && method === 'GET') {
+        return handleAdminGetServicios(request, env, tenant);
+      }
+
+      if (pathname === '/api/admin/servicios' && method === 'POST') {
+        return handleAdminCrearServicio(request, env, tenant);
+      }
+
+      if (pathname === '/api/admin/empleados' && method === 'GET') {
+        return handleAdminGetEmpleados(request, env, tenant);
+      }
+
+      // ARCHIVOS ESTÁTICOS
       if (pathname === '/cliente.html') {
         return serveCliente(request, tenant);
       }
+
       if (pathname.startsWith('/admin/')) {
         return serveAdmin(request, env, tenant);
       }
 
-      return json({ error: 'Not found' }, 404);
+      // Si no hay match
+      return json({ error: 'Not found', path: pathname }, 404);
 
     } catch (error) {
       console.error('[Worker] Error:', error);
